@@ -11,14 +11,15 @@
 1. [專案簡介與特色](#1-專案簡介與特色)
 2. [無線法規區域 (US) 與解除 5G 發射限制](#2-無線法規區域-us-與解除-5g-發射限制)
 3. [Web 診斷操作台快速啟動 (run.sh)](#3-web-診斷操作台快速啟動-runsh)
-4. [五大 Diagnostic 實戰診斷專題](#4-五大-diagnostic-實戰診斷專題)
+4. [連線裝置智慧辨識與射頻遙測 (Connected Stations)](#4-連線裝置智慧辨識與射頻遙測-connected-stations)
+5. [五大 Diagnostic 實戰診斷專題](#5-五大-diagnostic-實戰診斷專題)
    - [診斷一：往返延遲與無線抖動測試 (Ping Latency & Jitter)](#診斷一往返延遲與無線抖動測試-ping-latency--jitter)
    - [診斷二：實機極限吞吐量測速 (Web Speedtest & iPerf3)](#診斷二實機極限吞吐量測速-web-speedtest--iperf3)
    - [診斷三：即時動態訊號衰減折線圖 (Live RSSI & Rate Adaptation)](#診斷三即時動態訊號衰減折線圖-live-rssi--rate-adaptation)
    - [診斷四：空中通訊協定與封包側錄 (Packet Capture & Wireshark)](#診斷四空中通訊協定與封包側錄-packet-capture--wireshark)
    - [診斷五：頻段與頻道抗干擾評估 (RF Band & Channel Comparison)](#診斷五頻段與頻道抗干擾評估-rf-band--channel-comparison)
-5. [無線網路學習手冊與射頻理論實戰指南](#5-無線網路學習手冊與射頻理論實戰指南)
-6. [CLI 命令列速查手冊 (alfa-mode & iw)](#6-cli-命令列速查手冊-alfa-mode--iw)
+6. [無線網路學習手冊與射頻理論實戰指南](#6-無線網路學習手冊與射頻理論實戰指南)
+7. [CLI 命令列速查手冊 (alfa-mode & iw)](#7-cli-命令列速查手冊-alfa-mode--iw)
 
 ---
 
@@ -28,6 +29,7 @@
 
 ### ✨ 核心亮點
 * **多網路卡/雙網卡協同架構**：系統主力對外網卡（Primary Uplink）專職對外連網並提供 NAT 轉送；ALFA 網路卡可隨時切換為獨立診斷熱點基地台（Diagnostic AP）或 Client 備援上網，彼此路由度量（Metric）隔離互不干擾。
+* **連線裝置智慧識別（主機名稱與廠牌辨識）**：整合 **Apple mDNS (Bonjour / Avahi)** 與熱點本機 **DHCP Option 12** 記錄，即時自動反查用戶端裝置主機名稱（如 `Shen-iPhone-16e`、`Pixel-10-Pro`）；內建 42,000+ 筆 IEEE OUI 製造商快取，精準識別現代 iOS / Android 之「隨機私人 MAC (LAA)」防追蹤模式並智慧反推廠牌。
 * **一鍵 Web 儀表板 (`./run.sh`)**：支援響應式 Web 操作介面，手機連入熱點後，無需安裝任何 App，直接在手機瀏覽器開啟 `http://10.42.0.1:8080` 即可進行實機雙向測速、Ping 抖動與訊號分析。
 * **即時雙天線訊號監控**：即時擷取 2T2R 雙天線個別訊號（`Antenna 1 / Antenna 2 dBm`）、MCS 調變指數、即時傳輸速率（Tx/Rx Bitrate）與封包重傳（Retries）。
 * **WebSocket 即時推播架構**：採用非同步 WebSocket 長連線推播；徹底告別傳統 HTTP 輪詢造成的終端日誌洗版，介面反應更快更即時。
@@ -76,7 +78,28 @@ cd Diagnostic_Alfa
 
 ---
 
-## 4. 五大 Diagnostic 實戰診斷專題
+## 4. 連線裝置智慧辨識與射頻遙測 (Connected Stations)
+
+工作台具備高靈敏度的用戶端裝置連線感測與射頻遙測能力，能精準解析連入熱點之各智慧型手機、筆電或 IoT 設備：
+
+### 📱 雙軌主機名稱 (Hostname) 自動解析
+* **Android 裝置**：透過 **DHCP Option 12 (Host Name)** 協定。裝置索取 IP 時，熱點 `dnsmasq` 立即註冊本機 DNS PTR 反查記錄與日誌，系統可於 10 毫秒內解析出裝置名稱（如 `Pixel-10-Pro`）。
+* **Apple 裝置 (iOS / macOS)**：iOS 裝置為保護隱私，DHCP 封包不廣播主機名稱；但連入區域網路後會發布 **mDNS (Multicast DNS / Bonjour)** 廣播。系統透過後端 `avahi-resolve` 瞬間捕捉其 `.local` 服務名稱（如 `Shen-iPhone-16e`）。
+
+### 🔒 廠牌識別與隨機 MAC 隱私防護 (LAA vs. BIA)
+* **實體硬體 MAC 位址 (BIA)**：內建 42,000+ 筆 IEEE / Nmap OUI 資料庫快取（啟動載入僅需 39ms，快取命中僅 0.01ms），若裝置使用實體硬體 MAC，直接比對出製造商（如 Apple, Samsung, Intel, Google, ASUSTek 等）。
+* **隨機私人 MAC 位址 (LAA)**：現代 iOS（專用 Wi-Fi 位址）與 Android（隨機 MAC）預設啟用防追蹤虛擬 MAC。系統依據 IEEE 802 規範（第 1 個位元組次低位元為 1，即十六進位第二碼為 `2, 6, A, E`）自動判定為「隨機私人 MAC」，並結合解析出的主機名稱智慧標註廠牌。
+* **💡 查驗原廠實體 MAC 方法**：使用者若在手機 Wi-Fi 設定中將 `DiagnosticAP` 的「專用 Wi-Fi 位址」或「隨機 MAC」關閉，重新連線後系統將直接呈現原廠實體硬體製造商。
+
+### 📊 完整射頻訊號遙測參數
+對每一台已連線裝置，系統即時擷取：
+* **即時雙天線訊號強度**：總合 RSSI (dBm) 與雙天線獨立數值（`Antenna 1 / Antenna 2`）。
+* **實體層傳輸速率**：Tx / Rx 協商速率（如 `130.0 MBit/s MCS 15`、`144.4 MBit/s MCS 15 short GI`）。
+* **空口健康度**：連線時長、封包重傳計數（Tx Retries，評估是否遭遇碰撞干擾）。
+
+---
+
+## 5. 五大 Diagnostic 實戰診斷專題
 
 ### 診斷一：往返延遲與無線抖動測試 (Ping Latency & Jitter)
 * **目的**：評估 Wi-Fi 空氣介質品質、抗干擾能力與即時往返時延。
@@ -139,7 +162,7 @@ cd Diagnostic_Alfa
 
 ---
 
-## 5. 無線網路學習手冊與射頻理論實戰指南
+## 6. 無線網路學習手冊與射頻理論實戰指南
 
 在 Web 儀表板點選右上角「📖 學習手冊」或第六個分頁【學習手冊】，內建完整目錄索引、快速跳轉與摺疊卡片，包含兩大核心板塊（共 11 個互動單元）：
 
@@ -189,7 +212,7 @@ cd Diagnostic_Alfa
 
 ---
 
-## 6. CLI 命令列速查手冊 (alfa-mode & iw)
+## 7. CLI 命令列速查手冊 (alfa-mode & iw)
 
 除了 Web 介面外，亦可直接在系統任何終端機使用 `alfa-mode` 指令：
 

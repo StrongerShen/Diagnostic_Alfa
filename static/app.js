@@ -240,7 +240,10 @@ function updateUiStatus(data) {
   
   if (stations.length > 0) {
     const sta = stations[0];
-    document.getElementById('card-station-mac-quick').innerText = sta.mac;
+    const quickTitle = (sta.hostname && sta.hostname !== '未廣播名稱') 
+      ? `${sta.hostname} (${sta.ip || sta.mac})` 
+      : `${sta.mac} · ${sta.ip || '已連線'}`;
+    document.getElementById('card-station-mac-quick').innerText = quickTitle;
     document.getElementById('card-station-signal').innerText = `${sta.signal_dbm} dBm`;
     document.getElementById('card-station-rate').innerText = `${sta.tx_mbps} Mbps`;
     document.getElementById('card-station-retries').innerText = `重傳封包遺失: ${sta.tx_retries}`;
@@ -261,38 +264,60 @@ function updateUiStatus(data) {
     }
 
     // Render Stations List
-    stationsList.innerHTML = stations.map(s => `
-      <div class="ui-subcard border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
-        <div class="space-y-1">
-          <div class="flex items-center space-x-2">
-            <span class="font-mono font-bold ui-title text-sm">${s.mac}</span>
-            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-500 text-xs font-mono font-bold">${s.ip}</span>
+    stationsList.innerHTML = stations.map(s => {
+      const hasHostname = s.hostname && s.hostname !== '未廣播名稱';
+      const deviceTitle = hasHostname ? s.hostname : (s.is_random_mac ? '智慧型裝置 (未廣播名稱)' : '連線用戶端裝置');
+      const vendorBadge = s.is_random_mac 
+        ? `<span class="px-2 py-0.5 rounded bg-purple-500/15 text-purple-400 text-xs font-medium border border-purple-500/30 flex items-center space-x-1" title="${s.vendor_hint || 'iOS/Android 隨機 MAC 隱私防護'}">
+             <i data-lucide="shield-check" class="w-3 h-3 text-purple-400"></i>
+             <span>${s.vendor_detail || '隨機私人 MAC'}</span>
+           </span>`
+        : `<span class="px-2 py-0.5 rounded bg-blue-500/15 text-blue-400 text-xs font-medium border border-blue-500/30 flex items-center space-x-1" title="${s.vendor_hint || '實體硬體 OUI'}">
+             <i data-lucide="cpu" class="w-3 h-3 text-blue-400"></i>
+             <span>${s.vendor || '實體硬體'}</span>
+           </span>`;
+
+      return `
+        <div class="ui-subcard border rounded-lg p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 shadow-sm hover:border-purple-500/40 transition-colors">
+          <div class="space-y-1.5">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="font-bold ui-title text-sm sm:text-base flex items-center space-x-1.5">
+                <i data-lucide="${s.hostname && s.hostname.toLowerCase().includes('iphone') ? 'smartphone' : 'monitor-speaker'}" class="w-4 h-4 text-purple-400"></i>
+                <span>${deviceTitle}</span>
+              </span>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">${s.ip || '未指派 IP'}</span>
+              ${vendorBadge}
+            </div>
+            <div class="text-xs ui-sec flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span class="font-mono text-slate-400">MAC: <strong class="ui-title">${s.mac}</strong></span>
+              ${s.is_random_mac ? '<span class="text-[11px] text-purple-400/90 font-medium">🔒 專用 Wi-Fi 隨機位址</span>' : '<span class="text-[11px] text-blue-400/90 font-medium">🌐 實體硬體 MAC</span>'}
+              <span>連線時長: <strong class="ui-title font-mono">${s.connected_time || '-'}</strong></span>
+              <span>封包重傳: <strong class="font-mono ${s.tx_retries > 0 ? 'text-amber-500' : 'text-emerald-500'}">${s.tx_retries} 次</strong></span>
+            </div>
           </div>
-          <div class="text-xs ui-sec">
-            連線時長: <span class="ui-title font-mono font-semibold">${s.connected_time || '-'}</span> | 
-            封包重傳: <span class="font-mono font-bold ${s.tx_retries > 0 ? 'text-amber-500' : 'text-emerald-500'}">${s.tx_retries} 次</span>
+          
+          <div class="grid grid-cols-3 gap-2.5 text-xs shrink-0">
+            <div class="ui-tertiary px-2.5 py-1.5 rounded border">
+              <div class="ui-sec text-[10px]">訊號 (RSSI)</div>
+              <div class="font-bold text-amber-500 font-mono text-sm">${s.signal_dbm} dBm</div>
+              <div class="text-[9px] ui-muted font-mono">Ant: ${s.ant1_dbm}/${s.ant2_dbm}</div>
+            </div>
+            <div class="ui-tertiary px-2.5 py-1.5 rounded border">
+              <div class="ui-sec text-[10px]">即時傳輸 (Tx)</div>
+              <div class="font-bold text-emerald-500 font-mono text-sm">${s.tx_mbps} Mbps</div>
+              <div class="text-[9px] ui-muted font-mono truncate max-w-[95px]">${s.tx_bitrate_str}</div>
+            </div>
+            <div class="ui-tertiary px-2.5 py-1.5 rounded border">
+              <div class="ui-sec text-[10px]">即時接收 (Rx)</div>
+              <div class="font-bold text-cyan-500 font-mono text-sm">${s.rx_mbps} Mbps</div>
+              <div class="text-[9px] ui-muted font-mono truncate max-w-[95px]">${s.rx_bitrate_str}</div>
+            </div>
           </div>
         </div>
-        
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-          <div class="ui-tertiary px-3 py-2 rounded border">
-            <div class="ui-sec text-[11px]">訊號強度 (RSSI)</div>
-            <div class="font-bold text-amber-500 font-mono text-sm">${s.signal_dbm} dBm</div>
-            <div class="text-[10px] ui-muted font-mono">Ant: ${s.ant1_dbm} / ${s.ant2_dbm}</div>
-          </div>
-          <div class="ui-tertiary px-3 py-2 rounded border">
-            <div class="ui-sec text-[11px]">即時傳輸 (Tx)</div>
-            <div class="font-bold text-emerald-500 font-mono text-sm">${s.tx_mbps} Mbps</div>
-            <div class="text-[10px] ui-muted font-mono truncate max-w-[110px]">${s.tx_bitrate_str}</div>
-          </div>
-          <div class="ui-tertiary px-3 py-2 rounded border">
-            <div class="ui-sec text-[11px]">即時接收 (Rx)</div>
-            <div class="font-bold text-cyan-500 font-mono text-sm">${s.rx_mbps} Mbps</div>
-            <div class="text-[10px] ui-muted font-mono truncate max-w-[110px]">${s.rx_bitrate_str}</div>
-          </div>
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
+
+    if (window.lucide) lucide.createIcons();
 
     // Add point to real-time chart
     updateChart(sta.signal_dbm, sta.tx_mbps);

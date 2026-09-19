@@ -105,23 +105,181 @@ def get_interface_info() -> Dict[str, Any]:
     }
 
 
+# OUI Database Cache and Station Resolution
+OUI_CACHE: Dict[str, str] = {}
+DEVICE_CACHE: Dict[str, Dict[str, Any]] = {}
+
+
+def load_oui_database():
+    global OUI_CACHE
+    if OUI_CACHE:
+        return
+    oui_paths = [
+        "/usr/share/nmap/nmap-mac-prefixes",
+        "/usr/share/ieee-data/oui.txt",
+    ]
+    for path in oui_paths:
+        if os.path.exists(path):
+            try:
+                with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line or line.startswith("#"):
+                            continue
+                        parts = line.split(maxsplit=1)
+                        if len(parts) == 2:
+                            OUI_CACHE[parts[0].upper()] = parts[1]
+                if OUI_CACHE:
+                    break
+            except Exception:
+                pass
+
+
+load_oui_database()
+
+
+def resolve_station_details(mac: str, ip: str) -> Dict[str, Any]:
+    global DEVICE_CACHE
+    now = time.time()
+    mac_lower = mac.lower()
+
+    if mac_lower in DEVICE_CACHE:
+        entry = DEVICE_CACHE[mac_lower]
+        ttl = 180 if entry["hostname"] != "未廣播名稱" else 30
+        if now - entry["timestamp"] < ttl:
+            return entry["data"]
+
+    # 1. Check LAA (Locally Administered Address / 隨機 MAC 防追蹤)
+    try:
+        first_byte = int(mac.split(":")[0], 16)
+        is_random = bool(first_byte & 0x02)
+    except Exception:
+        is_random = False
+
+    clean_mac = mac.replace(":", "").upper()
+    oui_vendor = OUI_CACHE.get(clean_mac[:6], "未知硬體廠商")
+
+    # 2. Hostname resolution
+    hostname = ""
+    if ip:
+        # A. Local dnsmasq DNS PTR query (fast, ~10ms)
+        try:
+            r = subprocess.run(
+                ["dig", "@10.42.0.1", "-x", ip, "+short", "+time=1", "+tries=1"],
+                capture_output=True, text=True, timeout=0.6
+            )
+            h = r.stdout.strip().rstrip(".")
+            if h and not h.startswith(";") and "connection" not in h.lower():
+                hostname = h
+        except Exception:
+            pass
+
+        # B. Apple Bonjour / Avahi mDNS (multicast DNS)
+        if not hostname:
+            try:
+                r = subprocess.run(
+                    ["avahi-resolve", "-a", ip],
+                    capture_output=True, text=True, timeout=0.8
+                )
+                lines = r.stdout.strip().splitlines()
+                if lines:
+                    parts = lines[0].split()
+                    if len(parts) >= 2:
+                        hostname = parts[1].rstrip(".local")
+            except Exception:
+                pass
+
+        # C. Journalctl DHCPACK log fallback
+        if not hostname:
+            try:
+                r = subprocess.run(
+                    f'journalctl -u NetworkManager -g "DHCPACK.*{mac}" -n 3 --no-pager',
+                    shell=True, capture_output=True, text=True, timeout=0.8
+                )
+                for line in reversed(r.stdout.strip().splitlines()):
+                    m = re.search(r'DHCPACK\(.*?\)\s+[\d\.]+\s+[0-9a-fA-F:]+\s+([^\s]+)', line)
+                    if m:
+                        hostname = m.group(1)
+                        break
+            except Exception:
+                pass
+
+    # 3. Vendor classification & Inferred intelligence
+    if is_random:
+        vendor_label = "隨機私人 MAC"
+        vendor_detail = "iOS 專用位址 / Android 隨機 MAC"
+        vendor_hint = "手機啟用了專用 Wi-Fi 位址防追蹤功能；若關閉此設定可查看實體硬體廠牌"
+        h_lower = hostname.lower()
+        if any(k in h_lower for k in ["iphone", "ipad", "apple", "macbook"]):
+            vendor_detail = "Apple (由主機名稱識別)"
+        elif "pixel" in h_lower:
+            vendor_detail = "Google Pixel (由主機名稱識別)"
+        elif any(k in h_lower for k in ["galaxy", "samsung"]):
+            vendor_detail = "Samsung (由主機名稱識別)"
+        elif any(k in h_lower for k in ["xiaomi", "redmi", "mi-"]):
+            vendor_detail = "小米 Xiaomi (由主機名稱識別)"
+        elif "oppo" in h_lower:
+            vendor_detail = "OPPO (由主機名稱識別)"
+        elif "vivo" in h_lower:
+            vendor_detail = "vivo (由主機名稱識別)"
+    else:
+        vendor_label = oui_vendor
+        vendor_detail = f"實體硬體 OUI ({oui_vendor})"
+        vendor_hint = "實體硬體燒錄 MAC 位址 (BIA)"
+
+    res = {
+        "is_random_mac": is_random,
+        "hostname": hostname or "未廣播名稱",
+        "vendor_label": vendor_label,
+        "vendor_detail": vendor_detail,
+        "vendor_hint": vendor_hint,
+    }
+
+    DEVICE_CACHE[mac_lower] = {
+        "timestamp": now,
+        "hostname": hostname or "未廣播名稱",
+        "data": res
+    }
+    return res
+
+
 def get_connected_stations() -> List[Dict[str, Any]]:
     stations = []
     dump_out = run_cmd(f"iw dev {IFACE} station dump 2>/dev/null")
     if not dump_out:
         return stations
-    
+
+    # Parse neighbor table once for fast MAC -> IP lookup
+    neigh_out = run_cmd(f"ip neigh show dev {IFACE} 2>/dev/null")
+    mac_to_ip: Dict[str, str] = {}
+    for line in neigh_out.splitlines():
+        parts = line.split()
+        if "lladdr" in parts:
+            idx = parts.index("lladdr")
+            if idx + 1 < len(parts):
+                mac_to_ip[parts[idx + 1].lower()] = parts[0]
+
     blocks = dump_out.split("Station ")
     for block in blocks:
         if not block.strip():
             continue
         lines = block.strip().splitlines()
-        mac = lines[0].split()[0]
-        
-        # IP from neighbor table
-        ip_match = run_cmd(f"ip neigh show dev {IFACE} | grep -i '{mac}' | awk '{{print $1}}'")
-        ip_addr = ip_match.splitlines()[0] if ip_match else "10.42.0.254"
-        
+        mac = lines[0].split()[0].lower()
+
+        # IP from neighbor table mapping, or fallback to DHCPACK search
+        ip_addr = mac_to_ip.get(mac, "")
+        if not ip_addr:
+            try:
+                dhcp_out = run_cmd(f'journalctl -u NetworkManager -g "DHCPACK.*{mac}" -n 1 --no-pager 2>/dev/null')
+                m = re.search(r'DHCPACK\(.*?\)\s+([\d\.]+)\s+' + re.escape(mac), dhcp_out, re.IGNORECASE)
+                if m:
+                    ip_addr = m.group(1)
+            except Exception:
+                pass
+
+        # Resolve vendor & hostname
+        dev_info = resolve_station_details(mac, ip_addr)
+
         # Dual antenna signal parsing
         sig_match = re.search(r"signal:\s+(-?\d+)\s+\[(-?\d+),\s*(-?\d+)\]\s*dBm", block)
         if sig_match:
@@ -133,13 +291,13 @@ def get_connected_stations() -> List[Dict[str, Any]]:
             sig_avg = int(simple_sig.group(1)) if simple_sig else -50
             ant1 = sig_avg
             ant2 = sig_avg
-            
+
         # Bitrates
         tx_match = re.search(r"tx bitrate:\s+([^\n]+)", block)
         rx_match = re.search(r"rx bitrate:\s+([^\n]+)", block)
         tx_rate = tx_match.group(1).strip() if tx_match else "Unknown"
         rx_rate = rx_match.group(1).strip() if rx_match else "Unknown"
-        
+
         # Numeric Mbps
         tx_mbps_match = re.search(r"([\d\.]+)\s*MBit/s", tx_rate)
         rx_mbps_match = re.search(r"([\d\.]+)\s*MBit/s", rx_rate)
@@ -149,7 +307,7 @@ def get_connected_stations() -> List[Dict[str, Any]]:
         # Retries
         retry_match = re.search(r"tx retries:\s+(\d+)", block)
         retries = int(retry_match.group(1)) if retry_match else 0
-        
+
         # Connected Time
         time_match = re.search(r"connected time:\s+(\d+\s*\w+)", block)
         conn_time = time_match.group(1) if time_match else ""
@@ -157,6 +315,11 @@ def get_connected_stations() -> List[Dict[str, Any]]:
         stations.append({
             "mac": mac,
             "ip": ip_addr,
+            "is_random_mac": dev_info["is_random_mac"],
+            "hostname": dev_info["hostname"],
+            "vendor": dev_info["vendor_label"],
+            "vendor_detail": dev_info["vendor_detail"],
+            "vendor_hint": dev_info["vendor_hint"],
             "signal_dbm": sig_avg,
             "ant1_dbm": ant1,
             "ant2_dbm": ant2,
@@ -167,7 +330,7 @@ def get_connected_stations() -> List[Dict[str, Any]]:
             "tx_retries": retries,
             "connected_time": conn_time
         })
-        
+
     return stations
 
 

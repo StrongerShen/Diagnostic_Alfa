@@ -316,6 +316,24 @@
           目前尚無用戶端裝置連入 DiagnosticAP 熱點
         </div>
       </div>
+
+      <!-- Device Recognition Technical Notice -->
+      <div class="mt-3 p-3 rounded-lg border ui-border-sub bg-purple-500/5 text-xs text-slate-400 space-y-1.5">
+        <div class="font-bold text-purple-400 flex items-center space-x-1.5">
+          <i data-lucide="info" class="w-3.5 h-3.5"></i>
+          <span>裝置廠牌與主機名稱解析技術說明</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-[11px] leading-relaxed">
+          <div class="space-y-0.5">
+            <span class="text-purple-300 font-semibold">📱 主機名稱 (Hostname) 解析：</span>
+            <p>系統結合熱點本機 <code>dnsmasq</code> DHCP Option 12 記錄與 Apple <strong>mDNS (Bonjour / Avahi)</strong> 廣播，即時自動反查 iPhone、Pixel 等裝置名稱。</p>
+          </div>
+          <div class="space-y-0.5">
+            <span class="text-purple-300 font-semibold">🔒 廠牌與隨機 MAC (LAA)：</span>
+            <p>現代手機預設啟用「專用 Wi-Fi 位址 / 隨機 MAC」防追蹤功能。若在手機 Wi-Fi 設定中關閉此功能，本系統可直接由 IEEE OUI 資料庫比對出原廠實體硬體製造商。</p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Five Diagnostic Modules Tabs -->
