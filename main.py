@@ -8,6 +8,7 @@ import os
 import re
 import sys
 import time
+import shutil
 import asyncio
 import subprocess
 from typing import Dict, Any, List, Optional
@@ -22,9 +23,63 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 os.makedirs(STATIC_DIR, exist_ok=True)
 
-IFACE = "wlx00c0cabb0b45"
-PRIMARY_IFACE = "wlxd03745e1db0d"
-MODE_SCRIPT = os.path.expanduser("~/alfa-wifi-mode.sh")
+
+def detect_alfa_iface() -> str:
+    env_iface = os.environ.get("ALFA_IFACE")
+    if env_iface:
+        return env_iface
+    # 1. 優先依硬體 MAC 00:c0:ca:bb:0b:45 偵測
+    try:
+        res = subprocess.run("ip -o link 2>/dev/null", shell=True, capture_output=True, text=True)
+        for line in res.stdout.splitlines():
+            if "00:c0:ca:bb:0b:45" in line.lower():
+                parts = line.split(":", 2)
+                if len(parts) >= 2:
+                    return parts[1].strip()
+    except Exception:
+        pass
+    # 2. 搜尋 mt7921 驅動之網卡
+    try:
+        for name in os.listdir("/sys/class/net"):
+            driver_link = os.path.join("/sys/class/net", name, "device", "driver")
+            if os.path.islink(driver_link):
+                target = os.readlink(driver_link)
+                if "mt7921" in target:
+                    return name
+    except Exception:
+        pass
+    # 3. Fallback
+    if os.path.exists("/sys/class/net/wlx00c0cabb0b45"):
+        return "wlx00c0cabb0b45"
+    if os.path.exists("/sys/class/net/wlan1"):
+        return "wlan1"
+    return "wlan1"
+
+
+def detect_primary_iface(exclude_iface: str) -> str:
+    env_iface = os.environ.get("PRIMARY_IFACE")
+    if env_iface:
+        return env_iface
+    try:
+        res = subprocess.run("ip route show default 2>/dev/null", shell=True, capture_output=True, text=True)
+        m = re.search(r"dev\s+(\S+)", res.stdout)
+        if m and m.group(1) != exclude_iface:
+            return m.group(1)
+    except Exception:
+        pass
+    return "wlan0" if exclude_iface != "wlan0" else "eth0"
+
+
+IFACE = detect_alfa_iface()
+PRIMARY_IFACE = detect_primary_iface(IFACE)
+
+MODE_SCRIPT = (
+    os.environ.get("ALFA_MODE_SCRIPT")
+    or shutil.which("alfa-mode")
+    or os.path.expanduser("~/.local/bin/alfa-mode")
+    or os.path.expanduser("~/alfa-wifi-mode.sh")
+    or "/usr/local/bin/alfa-mode"
+)
 
 # Background process tracking
 IPERF3_PROC: Optional[subprocess.Popen] = None
@@ -399,11 +454,27 @@ def get_connected_stations() -> List[Dict[str, Any]]:
 def get_primary_uplink() -> Dict[str, Any]:
     ip_out = run_cmd(f"ip -4 addr show dev {PRIMARY_IFACE} 2>/dev/null")
     ip_m = re.search(r"inet\s+([\d\.]+/\d+)", ip_out)
+    
+    # 動態識別設備型號名稱
+    name = "主力網際網路連線網卡"
+    if PRIMARY_IFACE == "wlan0":
+        name = "Raspberry Pi 內建無線網卡 (Onboard Wi-Fi)"
+    elif "wlxd03745e1db0d" in PRIMARY_IFACE or "T3U" in PRIMARY_IFACE:
+        name = "TP-Link Archer T3U (RTL8812BU)"
+    elif PRIMARY_IFACE.startswith("eth") or PRIMARY_IFACE.startswith("en"):
+        name = "Gigabit 乙太有線網路 (Ethernet)"
+    elif PRIMARY_IFACE.startswith("wlx") or PRIMARY_IFACE.startswith("wlan"):
+        name = f"主力無線網卡 ({PRIMARY_IFACE})"
+
+    route_out = run_cmd(f"ip route show dev {PRIMARY_IFACE} 2>/dev/null")
+    metric_m = re.search(r"metric\s+(\d+)", route_out)
+    metric_val = int(metric_m.group(1)) if metric_m else 100
+
     return {
         "iface": PRIMARY_IFACE,
-        "name": "TP-Link Archer T3U (RTL8812BU)",
+        "name": name,
         "ip": ip_m.group(1) if ip_m else "離線",
-        "metric": 100,
+        "metric": metric_val,
         "role": "主力網際網路連線 (NAT 轉送提供者)"
     }
 

@@ -40,8 +40,24 @@ fi
 
 # 4. 偵測可用存取 IP
 LOCAL_IP="127.0.0.1"
-AP_IP=$(ip -4 addr show dev wlx00c0cabb0b45 2>/dev/null | awk '/inet / {print $2}' | cut -d/ -f1)
-PRIMARY_IP=$(ip -4 addr show dev wlxd03745e1db0d 2>/dev/null | awk '/inet / {print $2}' | cut -d/ -f1)
+
+# 動態偵測 ALFA 網卡與主力連線介面
+ALFA_DEV=$(ip -o link 2>/dev/null | awk -F': ' '/00:c0:ca:bb:0b:45/ {print $2}')
+if [ -z "$ALFA_DEV" ]; then
+    if ip link show wlx00c0cabb0b45 >/dev/null 2>&1; then
+        ALFA_DEV="wlx00c0cabb0b45"
+    else
+        ALFA_DEV="wlan1"
+    fi
+fi
+
+PRI_DEV=$(ip route show default 2>/dev/null | awk '{for(i=1;i<=NF;i++) if ($i=="dev") print $(i+1); exit}')
+if [ -z "$PRI_DEV" ] || [ "$PRI_DEV" = "$ALFA_DEV" ]; then
+    PRI_DEV="wlan0"
+fi
+
+AP_IP=$(ip -4 addr show dev "$ALFA_DEV" 2>/dev/null | awk '/inet / {print $2}' | cut -d/ -f1)
+PRIMARY_IP=$(ip -4 addr show dev "$PRI_DEV" 2>/dev/null | awk '/inet / {print $2}' | cut -d/ -f1)
 
 echo ""
 echo "✅ Web 伺服器即將在背景啟動，可透過以下網址存取操作儀表板："

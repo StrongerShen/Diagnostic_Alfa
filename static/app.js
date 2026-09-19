@@ -211,6 +211,18 @@ function updateUiStatus(data) {
   const ipText = document.getElementById('card-ip-text');
   const ssidText = document.getElementById('card-ssid');
   const freqBand = document.getElementById('card-freq-band');
+  const ifaceNameEl = document.getElementById('card-iface-name');
+
+  if (ifaceNameEl && iface.iface) {
+    ifaceNameEl.innerText = iface.iface;
+  }
+  if (iface.iface) {
+    document.querySelectorAll('.cmd-text').forEach(el => {
+      if (el.innerHTML.includes('wlx00c0cabb0b45') && iface.iface !== 'wlx00c0cabb0b45') {
+        el.innerHTML = el.innerHTML.replaceAll('wlx00c0cabb0b45', iface.iface);
+      }
+    });
+  }
   
   if (iface.type === 'AP') {
     modeText.innerHTML = `<span class="text-emerald-500 font-bold">🌟 熱點 AP 模式</span>`;
