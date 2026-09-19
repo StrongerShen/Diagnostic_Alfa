@@ -1,0 +1,1940 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ALFA AWUS036AXML 全頻道無線診斷工作台 (Diagnostic_Alfa)</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Offline Local QRCode Library -->
+  <script src="/static/qrcode.min.js"></script>
+
+  <!-- CSS Custom Properties for 100% Consistent Dark / Light Themes & Mobile Perfection -->
+  <style>
+    :root, [data-theme="dark"] {
+      --bg-page: #0b1120;
+      --bg-header: rgba(15, 23, 42, 0.95);
+      --bg-card: #1e293b;
+      --bg-subcard: #0f172a;
+      --bg-tertiary: #020617;
+      --border-main: #334155;
+      --border-sub: #1e293b;
+      --text-title: #f8fafc;
+      --text-body: #e2e8f0;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --pill-bg: #334155;
+      --pill-text: #e2e8f0;
+      --table-head-bg: #0f172a;
+      --table-head-text: #cbd5e1;
+      --code-bg: #020617;
+      --code-text: #f8fafc;
+    }
+
+    [data-theme="light"] {
+      --bg-page: #f8fafc;
+      --bg-header: rgba(255, 255, 255, 0.96);
+      --bg-card: #ffffff;
+      --bg-subcard: #f1f5f9;
+      --bg-tertiary: #ffffff;
+      --border-main: #cbd5e1;
+      --border-sub: #e2e8f0;
+      --text-title: #0f172a;
+      --text-body: #1e293b;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --pill-bg: #e2e8f0;
+      --pill-text: #334155;
+      --table-head-bg: #e2e8f0;
+      --table-head-text: #0f172a;
+      --code-bg: #1e293b;
+      --code-text: #f8fafc;
+    }
+
+    /* Prevent mobile horizontal blowout */
+    html, body {
+      max-width: 100vw;
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-body);
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    pre, code {
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+
+    .ui-header {
+      background-color: var(--bg-header);
+      border-color: var(--border-main);
+    }
+    .ui-card {
+      background-color: var(--bg-card);
+      border-color: var(--border-main);
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .ui-subcard {
+      background-color: var(--bg-subcard);
+      border-color: var(--border-sub);
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .ui-tertiary {
+      background-color: var(--bg-tertiary);
+      border-color: var(--border-sub);
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .ui-title { color: var(--text-title); }
+    .ui-sec { color: var(--text-secondary); }
+    .ui-muted { color: var(--text-muted); }
+    .ui-border { border-color: var(--border-main); }
+    .ui-border-sub { border-color: var(--border-sub); }
+    .ui-pill {
+      background-color: var(--pill-bg);
+      color: var(--pill-text);
+      border-color: var(--border-main);
+    }
+    .ui-code {
+      background-color: var(--code-bg);
+      color: var(--code-text);
+    }
+
+    /* Hide scrollbar for tabs navigation on mobile */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    @keyframes pulse-fast {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+    .live-dot {
+      animation: pulse-fast 1.5s infinite;
+    }
+  </style>
+</head>
+<body class="min-h-screen font-sans antialiased text-sm">
+
+  <!-- Top Navigation Bar -->
+  <header class="ui-header border-b sticky top-0 z-50 backdrop-blur shadow-sm">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center space-x-2 sm:space-x-3 min-w-0">
+        <div class="bg-emerald-600/20 p-1.5 sm:p-2 rounded-lg border border-emerald-500/40 shrink-0">
+          <i data-lucide="radio" class="w-5 h-5 sm:w-6 sm:h-6 text-emerald-500"></i>
+        </div>
+        <div class="min-w-0">
+          <h1 class="ui-title text-sm sm:text-base md:text-lg font-bold tracking-tight flex items-center space-x-1.5 truncate">
+            <span>Diagnostic_Alfa</span>
+            <span class="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">WS</span>
+          </h1>
+          <p class="ui-sec text-[10px] sm:text-xs truncate hidden sm:block">ALFA AWUS036AXML (MT7921AU) 診斷平台</p>
+        </div>
+      </div>
+      
+      <!-- Right Status & Controls -->
+      <div class="flex items-center space-x-1.5 sm:space-x-2.5 text-xs shrink-0">
+        
+        <!-- WebSocket Status Indicator -->
+        <div id="ws-status-pill" class="flex items-center space-x-1 px-2 py-1 rounded-full ui-pill border text-[11px]">
+          <span id="ws-dot" class="w-2 h-2 rounded-full bg-emerald-400 live-dot shrink-0"></span>
+          <span id="ws-text" class="font-bold text-emerald-500 font-mono">WS</span>
+        </div>
+
+        <!-- Regulatory Domain Pill (Desktop) -->
+        <div class="hidden sm:flex items-center space-x-1 px-2.5 py-1 rounded-full ui-pill border text-[11px]">
+          <span class="ui-sec">法規:</span>
+          <span id="badge-regdom" class="font-mono font-bold text-emerald-500">US</span>
+        </div>
+
+        <!-- Wireless Learning Guide Button -->
+        <button onclick="switchTab('tab-guide')" title="開啟無線網路學習手冊" class="flex items-center space-x-1 px-2 sm:px-2.5 py-1 rounded-lg ui-pill border hover:opacity-80 transition text-xs font-semibold text-emerald-500">
+          <i data-lucide="book-open" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+          <span class="hidden md:inline">學習手冊</span>
+        </button>
+
+        <!-- Dark/Light Theme Toggle Button -->
+        <button onclick="toggleTheme()" id="btn-theme-toggle" title="切換深色/淺色主題" class="p-1.5 sm:p-2 rounded-lg ui-pill border hover:opacity-80 transition flex items-center justify-center">
+          <i id="theme-icon" data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
+        </button>
+
+        <!-- Refresh Button -->
+        <button onclick="requestStatusRefresh()" title="重新整理" class="p-1.5 sm:p-2 rounded-lg ui-pill border hover:opacity-80 transition flex items-center justify-center">
+          <i data-lucide="refresh-cw" class="w-4 h-4 text-slate-400"></i>
+        </button>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
+
+    <!-- Card Row 1: Hardware & Mode Status (2 columns on mobile, 4 columns on desktop) -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+      
+      <!-- Card 1: ALFA Mode -->
+      <div class="ui-card rounded-xl p-3 sm:p-4 border shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between ui-sec mb-1">
+          <span class="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">網路卡狀態</span>
+          <i data-lucide="cpu" class="w-3.5 h-3.5 text-emerald-500"></i>
+        </div>
+        <div>
+          <div class="ui-title text-sm sm:text-base font-bold truncate">
+            <span id="card-mode-text">檢查中...</span>
+          </div>
+          <p id="card-chan-info" class="ui-sec text-[10px] sm:text-xs font-mono truncate mt-0.5">-</p>
+        </div>
+        <div class="mt-2 pt-1.5 border-t ui-border-sub flex justify-between text-[10px] sm:text-xs ui-sec">
+          <span class="truncate">wlx00c0cabb0b45</span>
+          <span id="card-ip-text" class="font-mono text-emerald-500 font-bold ml-1">10.42.0.1</span>
+        </div>
+      </div>
+
+      <!-- Card 2: SSID & Channel -->
+      <div class="ui-card rounded-xl p-3 sm:p-4 border shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between ui-sec mb-1">
+          <span class="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">熱點 SSID</span>
+          <i data-lucide="wifi" class="w-3.5 h-3.5 text-cyan-500"></i>
+        </div>
+        <div>
+          <div id="card-ssid" class="text-sm sm:text-base font-bold text-cyan-500 font-mono truncate">DiagnosticAP</div>
+          <p class="ui-sec text-[10px] sm:text-xs mt-0.5 truncate">密碼: <code class="ui-title font-semibold">88888888</code></p>
+        </div>
+        <div class="mt-2 pt-1.5 border-t ui-border-sub text-[10px] sm:text-xs ui-sec flex justify-between">
+          <span>WPA2/WPA3</span>
+          <span id="card-freq-band" class="text-cyan-500 font-semibold ml-1">5GHz</span>
+        </div>
+      </div>
+
+      <!-- Card 3: Connected Stations Count -->
+      <div class="ui-card rounded-xl p-3 sm:p-4 border shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between ui-sec mb-1">
+          <span class="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">已連線裝置</span>
+          <i data-lucide="users" class="w-3.5 h-3.5 text-purple-500"></i>
+        </div>
+        <div>
+          <div class="flex items-baseline space-x-1.5">
+            <span id="card-station-count" class="ui-title text-2xl sm:text-3xl font-extrabold">0</span>
+            <span class="ui-sec text-[10px] sm:text-xs">台已連線</span>
+          </div>
+          <p id="card-station-mac-quick" class="ui-sec text-[10px] sm:text-xs font-mono truncate mt-0.5">尚無裝置</p>
+        </div>
+        <div class="mt-2 pt-1.5 border-t ui-border-sub text-[10px] sm:text-xs ui-sec flex justify-between">
+          <span class="truncate">DHCP 10.42.0.x</span>
+          <span class="text-purple-500 font-medium ml-1">NAT</span>
+        </div>
+      </div>
+
+      <!-- Card 4: Realtime Signal Quality -->
+      <div class="ui-card rounded-xl p-3 sm:p-4 border shadow-sm flex flex-col justify-between">
+        <div class="flex items-center justify-between ui-sec mb-1">
+          <span class="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">無線訊號強度</span>
+          <i data-lucide="signal" class="w-3.5 h-3.5 text-amber-500"></i>
+        </div>
+        <div>
+          <div class="flex items-baseline space-x-1.5">
+            <span id="card-station-signal" class="text-lg sm:text-2xl font-bold text-amber-500 font-mono">- dBm</span>
+            <span id="card-station-rate" class="ui-title text-[10px] sm:text-xs font-mono truncate">- Mbps</span>
+          </div>
+          <p id="card-station-retries" class="ui-sec text-[10px] sm:text-xs mt-0.5 truncate">重傳封包遺失: 0</p>
+        </div>
+        <div class="mt-2 pt-1.5 border-t ui-border-sub text-[10px] sm:text-xs ui-sec flex justify-between">
+          <span>Ant: <span id="card-ant1" class="font-mono ui-title font-semibold">-</span></span>
+          <span><span id="card-ant2" class="font-mono ui-title font-semibold">-</span> dBm</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Quick Mode Switcher Bar (Mobile responsive buttons) -->
+    <div class="ui-card border rounded-xl p-3.5 sm:p-4 shadow-sm">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div>
+          <h2 class="ui-title text-xs sm:text-sm font-bold flex items-center space-x-1.5">
+            <i data-lucide="sliders" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-500"></i>
+            <span>模式切換控制 (alfa-mode)</span>
+          </h2>
+          <p class="ui-sec text-[10px] sm:text-xs">一鍵切換 5GHz / 2.4GHz 全頻道熱點發射或切回 Client 備援</p>
+        </div>
+        <!-- Button Grid: 3 columns on mobile -->
+        <div class="grid grid-cols-3 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2 pt-1 sm:pt-0">
+          <button onclick="sendSwitchMode('ap', '5G', '36')" class="py-2 sm:py-1.5 px-2 sm:px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[11px] sm:text-xs font-semibold transition text-center shadow-sm">
+            5G Ch 36
+          </button>
+          <button onclick="sendSwitchMode('ap', '5G', '149')" class="py-2 sm:py-1.5 px-2 sm:px-3 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-[11px] sm:text-xs font-semibold transition text-center shadow-sm">
+            5G Ch 149
+          </button>
+          <button onclick="sendSwitchMode('ap', '2.4G', '6')" class="py-2 sm:py-1.5 px-2 sm:px-3 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-[11px] sm:text-xs font-semibold transition text-center shadow-sm">
+            2.4G Ch 6
+          </button>
+          <button onclick="sendSwitchMode('client')" class="col-span-2 sm:col-span-1 py-2 sm:py-1.5 px-2 sm:px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[11px] sm:text-xs font-semibold transition text-center flex items-center justify-center space-x-1 shadow-sm">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+            <span>切回 Client 備援</span>
+          </button>
+          <button onclick="sendSwitchMode('stop')" class="py-2 sm:py-1.5 px-2 sm:px-3 bg-rose-700 hover:bg-rose-600 text-white rounded-lg text-[11px] sm:text-xs font-semibold transition text-center shadow-sm">
+            停止網路卡
+          </button>
+        </div>
+      </div>
+      <div id="mode-output-box" class="hidden mt-3 p-2.5 ui-code rounded-lg text-[11px] font-mono text-emerald-400 max-h-28 overflow-y-auto border ui-border">
+      </div>
+    </div>
+
+    <!-- Connected Stations Detailed Card -->
+    <div id="stations-card" class="ui-card border rounded-xl p-3.5 sm:p-5 shadow-sm">
+      <div class="flex items-center justify-between mb-2.5 border-b ui-border-sub pb-2.5">
+        <h3 class="ui-title text-xs sm:text-sm font-bold flex items-center space-x-1.5">
+          <i data-lucide="smartphone" class="w-4 h-4 text-purple-500"></i>
+          <span>已連線裝置明細 (Connected Stations)</span>
+        </h3>
+        <span class="ui-sec text-[10px] sm:text-xs flex items-center space-x-1">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 live-dot"></span>
+          <span>即時推播中</span>
+        </span>
+      </div>
+
+      <div id="stations-list" class="space-y-2.5">
+        <div class="text-center py-5 ui-sec text-xs">
+          <i data-lucide="wifi-off" class="w-7 h-7 mx-auto text-slate-400 mb-1.5"></i>
+          目前尚無用戶端裝置連入 DiagnosticAP 熱點
+        </div>
+      </div>
+    </div>
+
+    <!-- Five Diagnostic Modules Tabs -->
+    <div class="ui-card border rounded-xl shadow-sm overflow-hidden">
+      
+      <!-- Diagnostic Tabs Header (Scrollable on mobile) -->
+      <div class="flex border-b ui-border-sub ui-subcard overflow-x-auto no-scrollbar">
+        <button onclick="switchTab('tab-speedtest')" id="nav-tab-speedtest" class="tab-btn px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-bold text-emerald-500 border-b-2 border-emerald-500 flex items-center space-x-1.5 whitespace-nowrap shrink-0">
+          <i data-lucide="gauge" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+          <span>實機極限測速</span>
+        </button>
+        <button onclick="switchTab('tab-ping')" id="nav-tab-ping" class="tab-btn px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-semibold ui-sec hover:ui-title flex items-center space-x-1.5 whitespace-nowrap shrink-0">
+          <i data-lucide="activity" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+          <span>Ping 延遲與抖動</span>
+        </button>
+        <button onclick="switchTab('tab-chart')" id="nav-tab-chart" class="tab-btn px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-semibold ui-sec hover:ui-title flex items-center space-x-1.5 whitespace-nowrap shrink-0">
+          <i data-lucide="trending-up" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+          <span>即時訊號折線圖</span>
+        </button>
+        <button onclick="switchTab('tab-packets')" id="nav-tab-packets" class="tab-btn px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-semibold ui-sec hover:ui-title flex items-center space-x-1.5 whitespace-nowrap shrink-0">
+          <i data-lucide="file-search" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+          <span>通訊協定與封包</span>
+        </button>
+        <button onclick="switchTab('tab-channels')" id="nav-tab-channels" class="tab-btn px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-semibold ui-sec hover:ui-title flex items-center space-x-1.5 whitespace-nowrap shrink-0">
+          <i data-lucide="layers" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+          <span>頻段抗干擾</span>
+        </button>
+        <button onclick="switchTab('tab-guide')" id="nav-tab-guide" class="tab-btn px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-semibold ui-sec hover:ui-title flex items-center space-x-1.5 whitespace-nowrap shrink-0">
+          <i data-lucide="book-open" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500"></i>
+          <span>無線網路學習手冊</span>
+        </button>
+      </div>
+
+      <!-- Tab 2: Throughput Speedtest (Mobile First: Big Gauges on Top!) -->
+      <div id="tab-speedtest" class="p-3.5 sm:p-5 space-y-4 sm:space-y-6">
+        
+        <!-- Built-in In-Browser Speedtest Card (FRONT AND CENTER) -->
+        <div class="ui-subcard p-4 sm:p-5 rounded-xl border shadow-sm">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+            <div>
+              <h4 class="ui-title text-sm sm:text-base font-bold flex items-center space-x-1.5">
+                <i data-lucide="zap" class="w-4 h-4 text-amber-500"></i>
+                <span>手機/瀏覽器端 實機免裝 App 測速</span>
+              </h4>
+              <p class="ui-sec text-[11px] sm:text-xs">連入 DiagnosticAP 後，手機瀏覽器可直接測試本機 5G AP 的真實雙向極限吞吐量</p>
+            </div>
+            <button onclick="startBrowserSpeedtest()" id="btn-browser-speedtest" class="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md transition flex items-center justify-center space-x-2">
+              <i data-lucide="play" class="w-4 h-4"></i>
+              <span>開始雙向測速</span>
+            </button>
+          </div>
+
+          <!-- Speedtest Gauges -->
+          <div class="grid grid-cols-2 gap-2.5 sm:gap-4">
+            <div class="ui-tertiary p-3 sm:p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between shadow-sm">
+              <div>
+                <span class="ui-sec text-[10px] sm:text-xs font-semibold">下載吞吐量 (Download)</span>
+                <div id="speed-dl-val" class="text-2xl sm:text-3xl font-extrabold font-mono text-emerald-500 mt-1">-- <span class="ui-sec text-xs font-normal">Mbps</span></div>
+              </div>
+              <i data-lucide="arrow-down-circle" class="w-7 h-7 sm:w-10 sm:h-10 text-emerald-500/30 hidden sm:block"></i>
+            </div>
+            <div class="ui-tertiary p-3 sm:p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between shadow-sm">
+              <div>
+                <span class="ui-sec text-[10px] sm:text-xs font-semibold">上傳吞吐量 (Upload)</span>
+                <div id="speed-ul-val" class="text-2xl sm:text-3xl font-extrabold font-mono text-cyan-500 mt-1">-- <span class="ui-sec text-xs font-normal">Mbps</span></div>
+              </div>
+              <i data-lucide="arrow-up-circle" class="w-7 h-7 sm:w-10 sm:h-10 text-cyan-500/30 hidden sm:block"></i>
+            </div>
+          </div>
+          <div id="speed-progress-bar" class="w-full bg-slate-700/40 h-2 rounded-full mt-3 overflow-hidden hidden">
+            <div id="speed-progress" class="bg-amber-400 h-full w-0 transition-all duration-300"></div>
+          </div>
+        </div>
+
+        <!-- 📱 Mobile QR Code Card (Compact & Expandable) -->
+        <div class="ui-subcard p-4 sm:p-5 rounded-xl border shadow-sm">
+          <div class="flex items-center justify-between cursor-pointer" onclick="toggleQrBox()">
+            <div class="flex items-center space-x-2">
+              <span class="p-1.5 rounded-lg bg-amber-500/20 text-amber-500 border border-amber-500/30">
+                <i data-lucide="qr-code" class="w-4 h-4"></i>
+              </span>
+              <div>
+                <h4 class="ui-title text-xs sm:text-sm font-bold">手機連線 / 網址分享 QR Code</h4>
+                <p class="ui-sec text-[10px] sm:text-xs">供其他手機或裝置相機掃描，一鍵加入 Wi-Fi 或開啟測速</p>
+              </div>
+            </div>
+            <button class="ui-sec hover:ui-title p-1">
+              <i id="qr-toggle-icon" data-lucide="chevron-down" class="w-4 h-4 transition-transform"></i>
+            </button>
+          </div>
+
+          <!-- Collapsible QR Code Content -->
+          <div id="qr-expandable-section" class="mt-4 pt-3 border-t ui-border-sub flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex-1 space-y-2.5 w-full">
+              <!-- Switcher -->
+              <div class="flex items-center space-x-2">
+                <button onclick="renderQr('url')" id="btn-qr-url" class="px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-600 text-white transition flex items-center space-x-1">
+                  <i data-lucide="globe" class="w-3 h-3"></i>
+                  <span>1. 網頁網址</span>
+                </button>
+                <button onclick="renderQr('wifi')" id="btn-qr-wifi" class="px-3 py-1.5 rounded-lg text-[11px] font-semibold ui-pill border hover:opacity-80 transition flex items-center space-x-1">
+                  <i data-lucide="wifi" class="w-3 h-3"></i>
+                  <span>2. Wi-Fi 自動連線</span>
+                </button>
+              </div>
+
+              <div class="flex items-center space-x-1.5 text-xs font-mono">
+                <span class="ui-sec text-[11px]">位址:</span>
+                <code id="qr-target-url" class="px-2 py-0.5 rounded ui-code border ui-border text-emerald-400 select-all font-bold text-[11px] truncate max-w-[200px]">http://10.42.0.1:8080</code>
+                <button onclick="copyTargetUrl()" class="px-2 py-0.5 rounded ui-pill border hover:opacity-80 text-[11px] transition flex items-center space-x-1 shrink-0">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                  <span id="copy-btn-text">複製</span>
+                </button>
+              </div>
+              <p id="qr-instructions" class="ui-sec text-[10px] sm:text-[11px]">
+                💡 操作提示：手機先連上 <span class="font-mono text-cyan-500 font-bold">DiagnosticAP</span>，再以相機掃描 QR Code 即可進入。
+              </p>
+            </div>
+
+            <!-- QR Code Canvas Display Box -->
+            <div class="flex flex-col items-center bg-white p-3 rounded-2xl shadow-lg border border-slate-300 shrink-0">
+              <div id="qrcode-box" class="w-36 h-36 flex items-center justify-center"></div>
+              <span id="qr-label" class="mt-1.5 text-[11px] font-mono text-slate-800 font-bold text-center">手機掃描開啟測速</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- iPerf3 Server Section -->
+        <div class="ui-subcard p-3.5 sm:p-4 rounded-xl border">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="ui-title text-xs sm:text-sm font-bold flex items-center space-x-1.5">
+                <i data-lucide="server" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-500"></i>
+                <span>iPerf3 伺服器 (連接埠 5201)</span>
+              </h4>
+              <p class="ui-sec text-[10px] sm:text-xs">在 10.42.0.1 開啟，支援手機 App（HE.NET Network Tools 等）測速</p>
+            </div>
+            <div class="flex items-center space-x-1.5">
+              <span id="iperf3-status-badge" class="px-2 py-0.5 text-[11px] rounded ui-pill border">檢查中</span>
+              <button onclick="sendIperf3Toggle()" id="btn-iperf3-toggle" class="px-2.5 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-semibold transition shadow-sm">
+                切換
+              </button>
+            </div>
+          </div>
+          <div class="mt-2.5 p-2.5 ui-code rounded text-xs font-mono">
+            <div class="ui-sec text-[10px]"># 電腦終端機測試指令：</div>
+            <div class="text-purple-400 text-[11px] mt-0.5 select-all">iperf3 -c 10.42.0.1 -i 1 -t 10</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tab 1: Ping Latency & Jitter -->
+      <div id="tab-ping" class="hidden p-3.5 sm:p-5 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 ui-subcard p-3 rounded-lg border">
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center space-x-1.5">
+              <label class="ui-title text-xs font-semibold shrink-0">目標 IP:</label>
+              <input id="ping-target" type="text" value="10.42.0.254" class="ui-tertiary border rounded px-2 py-1 text-xs font-mono text-emerald-500 focus:ring-1 focus:ring-emerald-400 outline-none w-32">
+            </div>
+            <div class="flex items-center space-x-1.5">
+              <label class="ui-title text-xs font-semibold shrink-0">次數:</label>
+              <select id="ping-count" class="ui-tertiary border rounded px-2 py-1 text-xs ui-title outline-none">
+                <option value="5">5 次</option>
+                <option value="10" selected>10 次</option>
+                <option value="20">20 次</option>
+              </select>
+            </div>
+          </div>
+          <button onclick="runPingWs()" id="btn-run-ping" class="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center space-x-1 shadow-sm">
+            <i data-lucide="play" class="w-3.5 h-3.5"></i>
+            <span>執行 Ping 診斷</span>
+          </button>
+        </div>
+
+        <!-- Ping Results Cards -->
+        <div id="ping-stats-row" class="hidden grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div class="ui-tertiary p-2.5 rounded-lg border text-center shadow-sm">
+            <span class="ui-sec text-[10px]">最小延遲 (Min)</span>
+            <div id="ping-min" class="text-sm sm:text-base font-bold font-mono text-emerald-500">- ms</div>
+          </div>
+          <div class="ui-tertiary p-2.5 rounded-lg border text-center shadow-sm">
+            <span class="ui-sec text-[10px]">平均延遲 (Avg)</span>
+            <div id="ping-avg" class="text-sm sm:text-base font-bold font-mono text-cyan-500">- ms</div>
+          </div>
+          <div class="ui-tertiary p-2.5 rounded-lg border text-center shadow-sm">
+            <span class="ui-sec text-[10px]">最大延遲 (Max)</span>
+            <div id="ping-max" class="text-sm sm:text-base font-bold font-mono text-amber-500">- ms</div>
+          </div>
+          <div class="ui-tertiary p-2.5 rounded-lg border text-center shadow-sm">
+            <span class="ui-sec text-[10px]">封包遺失率 (Loss)</span>
+            <div id="ping-loss" class="text-sm sm:text-base font-bold font-mono ui-title">0%</div>
+          </div>
+        </div>
+
+        <pre id="ping-output" class="ui-code p-3 rounded-lg border ui-border text-xs font-mono overflow-x-auto min-h-[80px] max-h-56">點擊「執行 Ping 診斷」開始測試...</pre>
+      </div>
+
+      <!-- Tab 3: Dynamic Real-time RSSI & Rate Chart -->
+      <div id="tab-chart" class="hidden p-3.5 sm:p-5 space-y-3 sm:space-y-4">
+        <div class="flex items-center justify-between text-xs ui-sec">
+          <span class="flex items-center space-x-1 truncate">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 live-dot shrink-0"></span>
+            <span class="truncate">即時訊號衰減與調速監控</span>
+          </span>
+          <button onclick="clearChartData()" class="ui-sec hover:ui-title underline text-[11px] shrink-0 ml-2">清除</button>
+        </div>
+
+        <div class="h-64 sm:h-72 w-full ui-tertiary p-2 rounded-xl border">
+          <canvas id="liveRssiChart"></canvas>
+        </div>
+      </div>
+
+                  <!-- Tab 4: Packet Capture & Protocol Inspection -->
+      <div id="tab-packets" class="hidden p-3.5 sm:p-5 space-y-4">
+        
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b ui-border-sub">
+          <div>
+            <h4 class="ui-title text-xs sm:text-sm font-bold flex items-center space-x-1.5">
+              <i data-lucide="file-search" class="w-4 h-4 text-purple-500"></i>
+              <span>無線通訊協定與封包側錄實戰工作台</span>
+            </h4>
+            <p class="ui-sec text-[10px] sm:text-xs mt-0.5">
+              透過 tcpdump 與 Wireshark 深度側錄 wlx00c0cabb0b45 空中介面與網路層通訊行為（涵蓋 DHCP、DNS、Captive Portal、mDNS、QUIC 與安全交握）
+            </p>
+          </div>
+          <button onclick="switchTab('tab-guide'); jumpToGuideSection('test-4');" class="px-3 py-1.5 text-xs rounded-lg ui-pill border hover:opacity-80 transition flex items-center space-x-1.5 font-semibold text-purple-400 shrink-0 shadow-sm">
+            <i data-lucide="graduation-cap" class="w-4 h-4"></i>
+            <span>前往學習手冊【模組 04】觀看深度解析 ➔</span>
+          </button>
+        </div>
+
+        <!-- 💡 Operational Guidance Alert Banner -->
+        <div class="ui-subcard p-3.5 sm:p-4 rounded-xl border border-purple-500/30 bg-purple-500/5 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs shadow-sm">
+          <div class="flex items-start space-x-2.5">
+            <span class="p-1.5 rounded-lg bg-purple-500/20 text-purple-400 shrink-0 mt-0.5 md:mt-0">
+              <i data-lucide="terminal" class="w-4 h-4"></i>
+            </span>
+            <div class="space-y-1">
+              <div class="font-bold ui-title flex items-center space-x-2">
+                <span>💡 終端機執行指引：複製指令並貼至 Terminal 視窗執行</span>
+                <span class="px-1.5 py-0.2 rounded text-[10px] bg-emerald-500/20 text-emerald-400 font-mono font-bold">IP 自動同步</span>
+              </div>
+              <p class="ui-sec text-[11px] leading-relaxed">
+                本分頁精選 6 大實用 <code class="font-mono text-cyan-400">tcpdump</code> 側錄指令。請點擊指令旁的 <strong>「複製」按鈕</strong>，直接<strong>貼至本機終端機（Terminal）</strong>執行即可觀察即時空中封包。<br>
+                若需要學習各協定之底層運作機制、封包欄位解析或故障排除，請點擊右側按鈕前往<strong>【無線網路學習手冊】模組 04</strong> 觀看完整理論教學。
+              </p>
+            </div>
+          </div>
+          <button onclick="switchTab('tab-guide'); jumpToGuideSection('test-4');" class="px-3 py-2 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 border border-purple-500/40 transition flex items-center justify-center space-x-1.5 font-semibold text-xs shrink-0 self-start md:self-auto shadow-sm">
+            <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
+            <span>學習手冊模組 04 ➔</span>
+          </button>
+        </div>
+
+        <!-- 6-Card Command Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          
+          <!-- Card 1: DNS & General Traffic -->
+          <div class="ui-subcard p-3.5 rounded-xl border text-xs space-y-2.5 flex flex-col justify-between shadow-sm">
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="font-bold ui-title flex items-center space-x-1.5">
+                  <i data-lucide="terminal" class="w-3.5 h-3.5 text-cyan-400"></i>
+                  <span>1. 即時連線探測 (DNS / ARP / TLS)</span>
+                </span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-cyan-500/20 text-cyan-400 font-semibold">免存檔</span>
+              </div>
+              <p class="ui-sec text-[11px]">貼至終端機執行，實時側錄已連線手機的 DNS 解析查詢與廣播回應速度。</p>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="relative group">
+                <div class="p-2.5 pr-14 ui-code rounded text-cyan-400 border ui-border-sub font-mono text-[11px] break-all select-all cmd-text">sudo tcpdump -i wlx00c0cabb0b45 -n host <span class="packet-target-ip">10.42.0.254</span> -c 30</div>
+                <button onclick="copyText(this)" title="複製指令" class="absolute right-1.5 top-1.5 px-2 py-1 rounded bg-slate-700/60 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-600 transition flex items-center space-x-1 text-[10px] font-sans">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                  <span>複製</span>
+                </button>
+              </div>
+              <div class="flex items-center justify-between text-[10px] pt-0.5">
+                <span class="ui-muted">📋 複製後貼至終端機執行</span>
+                <button onclick="switchTab('tab-guide'); jumpToGuideSection('test-4');" class="text-purple-400 hover:underline flex items-center space-x-0.5 font-medium">
+                  <span>詳見學習手冊模組 04 ➔</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: DHCP DORA -->
+          <div class="ui-subcard p-3.5 rounded-xl border text-xs space-y-2.5 flex flex-col justify-between shadow-sm">
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="font-bold ui-title flex items-center space-x-1.5">
+                  <i data-lucide="network" class="w-3.5 h-3.5 text-emerald-400"></i>
+                  <span>2. DHCP 四向交握位址配發</span>
+                </span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-400 font-semibold">UDP 67/68</span>
+              </div>
+              <p class="ui-sec text-[11px]">貼至終端機執行，追蹤 DORA (Discover➔Offer➔Request➔ACK)，排查手機卡在取得 IP。</p>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="relative group">
+                <div class="p-2.5 pr-14 ui-code rounded text-emerald-400 border ui-border-sub font-mono text-[11px] break-all select-all cmd-text">sudo tcpdump -i wlx00c0cabb0b45 -n "port 67 or port 68" -v</div>
+                <button onclick="copyText(this)" title="複製指令" class="absolute right-1.5 top-1.5 px-2 py-1 rounded bg-slate-700/60 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-600 transition flex items-center space-x-1 text-[10px] font-sans">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                  <span>複製</span>
+                </button>
+              </div>
+              <div class="flex items-center justify-between text-[10px] pt-0.5">
+                <span class="ui-muted">📋 複製後貼至終端機執行</span>
+                <button onclick="switchTab('tab-guide'); jumpToGuideSection('test-4');" class="text-purple-400 hover:underline flex items-center space-x-0.5 font-medium">
+                  <span>詳見學習手冊模組 04 ➔</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: Captive Portal / HTTP 204 -->
+          <div class="ui-subcard p-3.5 rounded-xl border text-xs space-y-2.5 flex flex-col justify-between shadow-sm">
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="font-bold ui-title flex items-center space-x-1.5">
+                  <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-amber-400"></i>
+                  <span>3. 連通性探測與強制門戶檢測</span>
+                </span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-amber-500/20 text-amber-400 font-semibold">HTTP 204</span>
+              </div>
+              <p class="ui-sec text-[11px]">貼至終端機執行，監聽 Android (generate_204) 與 Apple 探測，排查 Wi-Fi 驚嘆號。</p>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="relative group">
+                <div class="p-2.5 pr-14 ui-code rounded text-amber-400 border ui-border-sub font-mono text-[11px] break-all select-all cmd-text">sudo tcpdump -i wlx00c0cabb0b45 -n "tcp port 80 and (tcp[tcpflags] & tcp-push != 0)"</div>
+                <button onclick="copyText(this)" title="複製指令" class="absolute right-1.5 top-1.5 px-2 py-1 rounded bg-slate-700/60 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-600 transition flex items-center space-x-1 text-[10px] font-sans">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                  <span>複製</span>
+                </button>
+              </div>
+              <div class="flex items-center justify-between text-[10px] pt-0.5">
+                <span class="ui-muted">📋 複製後貼至終端機執行</span>
+                <button onclick="switchTab('tab-guide'); jumpToGuideSection('test-4');" class="text-purple-400 hover:underline flex items-center space-x-0.5 font-medium">
+                  <span>詳見學習手冊模組 04 ➔</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 4: mDNS & SSDP -->
+          <div class="ui-subcard p-3.5 rounded-xl border text-xs space-y-2.5 flex flex-col justify-between shadow-sm">
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="font-bold ui-title flex items-center space-x-1.5">
+                  <i data-lucide="radio" class="w-3.5 h-3.5 text-purple-400"></i>
+                  <span>4. 區網設備零設定自動發現</span>
+                </span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-purple-500/20 text-purple-400 font-semibold">mDNS / SSDP</span>
+              </div>
+              <p class="ui-sec text-[11px]">貼至終端機執行，監聽 AirPlay、Chromecast、智慧家庭與印表機多點傳送廣播。</p>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="relative group">
+                <div class="p-2.5 pr-14 ui-code rounded text-purple-400 border ui-border-sub font-mono text-[11px] break-all select-all cmd-text">sudo tcpdump -i wlx00c0cabb0b45 -n "udp port 5353 or udp port 1900"</div>
+                <button onclick="copyText(this)" title="複製指令" class="absolute right-1.5 top-1.5 px-2 py-1 rounded bg-slate-700/60 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-600 transition flex items-center space-x-1 text-[10px] font-sans">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                  <span>複製</span>
+                </button>
+              </div>
+              <div class="flex items-center justify-between text-[10px] pt-0.5">
+                <span class="ui-muted">📋 複製後貼至終端機執行</span>
+                <button onclick="switchTab('tab-guide'); jumpToGuideSection('test-4');" class="text-purple-400 hover:underline flex items-center space-x-0.5 font-medium">
+                  <span>詳見學習手冊模組 04 ➔</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 5: QUIC / HTTP/3 -->
+          <div class="ui-subcard p-3.5 rounded-xl border text-xs space-y-2.5 flex flex-col justify-between shadow-sm">
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="font-bold ui-title flex items-center space-x-1.5">
+                  <i data-lucide="zap" class="w-3.5 h-3.5 text-rose-400"></i>
+                  <span>5. 新世代 QUIC / HTTP/3 串流</span>
+                </span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-rose-500/20 text-rose-400 font-semibold">UDP 443</span>
+              </div>
+              <p class="ui-sec text-[11px]">貼至終端機執行，監聽 Google、YouTube 與 IG 之 0-RTT 快速重連與連線遷移串流。</p>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="relative group">
+                <div class="p-2.5 pr-14 ui-code rounded text-rose-400 border ui-border-sub font-mono text-[11px] break-all select-all cmd-text">sudo tcpdump -i wlx00c0cabb0b45 -n "udp port 443" -c 30</div>
+                <button onclick="copyText(this)" title="複製指令" class="absolute right-1.5 top-1.5 px-2 py-1 rounded bg-slate-700/60 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-600 transition flex items-center space-x-1 text-[10px] font-sans">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                  <span>複製</span>
+                </button>
+              </div>
+              <div class="flex items-center justify-between text-[10px] pt-0.5">
+                <span class="ui-muted">📋 複製後貼至終端機執行</span>
+                <button onclick="switchTab('tab-guide'); jumpToGuideSection('test-4');" class="text-purple-400 hover:underline flex items-center space-x-0.5 font-medium">
+                  <span>詳見學習手冊模組 04 ➔</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 6: Save PCAP -->
+          <div class="ui-subcard p-3.5 rounded-xl border text-xs space-y-2.5 flex flex-col justify-between shadow-sm">
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="font-bold ui-title flex items-center space-x-1.5">
+                  <i data-lucide="file-down" class="w-3.5 h-3.5 text-indigo-400"></i>
+                  <span>6. 儲存為 Wireshark PCAP 檔案</span>
+                </span>
+                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono bg-indigo-500/20 text-indigo-400 font-semibold">Wireshark</span>
+              </div>
+              <p class="ui-sec text-[11px]">貼至終端機執行，側錄 1000 個封包直接存檔，供 Wireshark 圖形化時間軸分析。</p>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="relative group">
+                <div class="p-2.5 pr-14 ui-code rounded text-indigo-400 border ui-border-sub font-mono text-[11px] break-all select-all cmd-text">sudo tcpdump -i wlx00c0cabb0b45 -w /tmp/wifi_diagnostic.pcap -c 1000</div>
+                <button onclick="copyText(this)" title="複製指令" class="absolute right-1.5 top-1.5 px-2 py-1 rounded bg-slate-700/60 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-600 transition flex items-center space-x-1 text-[10px] font-sans">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                  <span>複製</span>
+                </button>
+              </div>
+              <div class="flex items-center justify-between text-[10px] pt-0.5">
+                <span class="ui-muted">📋 複製後貼至終端機執行</span>
+                <button onclick="switchTab('tab-guide'); jumpToGuideSection('test-4');" class="text-purple-400 hover:underline flex items-center space-x-0.5 font-medium">
+                  <span>詳見學習手冊模組 04 ➔</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+                <!-- Bottom: Wireshark Display Filters Box -->
+        <div class="ui-subcard p-3.5 sm:p-4 rounded-xl border space-y-3 shadow-sm">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b ui-border-sub pb-2.5">
+            <div>
+              <span class="font-bold ui-title text-xs sm:text-sm flex items-center space-x-1.5">
+                <i data-lucide="filter" class="w-4 h-4 text-cyan-400"></i>
+                <span>🔍 Wireshark 實戰鑑識顯示過濾器速查 (Display Filters)</span>
+              </span>
+              <p class="ui-sec text-[10px] sm:text-[11px] mt-0.5">點選右側「複製」按鈕可將過濾語法直接貼入 Wireshark 上方過濾列快速篩選</p>
+            </div>
+            <button onclick="switchTab('tab-guide'); jumpToGuideSection('theory-6');" class="text-[11px] text-purple-400 hover:underline font-semibold flex items-center space-x-1 shrink-0">
+              <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
+              <span>查看理論 06 原生訊框光譜 ➔</span>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs font-mono">
+            
+            <!-- Item 1: Beacon -->
+            <div class="p-2.5 ui-tertiary rounded-xl border flex flex-col justify-between space-y-2 group hover:border-cyan-500/50 transition shadow-sm">
+              <div class="flex items-center justify-between font-sans">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 flex items-center space-x-1">
+                  <span>📡</span>
+                  <span>信標 (Beacon)</span>
+                </span>
+                <button onclick="copyText(this)" title="複製過濾語法" class="px-2 py-0.5 rounded ui-pill border hover:border-cyan-500 text-[10px] font-sans ui-sec hover:ui-title transition flex items-center space-x-1 shadow-sm">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                  <span>複製</span>
+                </button>
+              </div>
+              <div class="p-1.5 rounded ui-code font-mono text-[11px] font-bold text-cyan-400 select-all border ui-border-sub cmd-text break-all">
+                wlan.fc.type_subtype == 0x08
+              </div>
+              <span class="text-[11px] ui-sec font-sans leading-tight">只過濾 AP 廣播之 Beacon 信標訊框</span>
+            </div>
+
+            <!-- Item 2: Deauth -->
+            <div class="p-2.5 ui-tertiary rounded-xl border flex flex-col justify-between space-y-2 group hover:border-rose-500/50 transition shadow-sm">
+              <div class="flex items-center justify-between font-sans">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 flex items-center space-x-1">
+                  <span>⚡</span>
+                  <span>斷線攻擊 (Deauth)</span>
+                </span>
+                <button onclick="copyText(this)" title="複製過濾語法" class="px-2 py-0.5 rounded ui-pill border hover:border-rose-500 text-[10px] font-sans ui-sec hover:ui-title transition flex items-center space-x-1 shadow-sm">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                  <span>複製</span>
+                </button>
+              </div>
+              <div class="p-1.5 rounded ui-code font-mono text-[11px] font-bold text-rose-400 select-all border ui-border-sub cmd-text break-all">
+                wlan.fc.type_subtype == 0x0c
+              </div>
+              <span class="text-[11px] ui-sec font-sans leading-tight">過濾 Deauth 解除認證斷線攻擊訊框</span>
+            </div>
+
+            <!-- Item 3: EAPOL -->
+            <div class="p-2.5 ui-tertiary rounded-xl border flex flex-col justify-between space-y-2 group hover:border-purple-500/50 transition shadow-sm">
+              <div class="flex items-center justify-between font-sans">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30 flex items-center space-x-1">
+                  <span>🔐</span>
+                  <span>四向交握 (EAPOL)</span>
+                </span>
+                <button onclick="copyText(this)" title="複製過濾語法" class="px-2 py-0.5 rounded ui-pill border hover:border-purple-500 text-[10px] font-sans ui-sec hover:ui-title transition flex items-center space-x-1 shadow-sm">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                  <span>複製</span>
+                </button>
+              </div>
+              <div class="p-1.5 rounded ui-code font-mono text-[11px] font-bold text-purple-400 select-all border ui-border-sub cmd-text break-all">
+                eapol
+              </div>
+              <span class="text-[11px] ui-sec font-sans leading-tight">過濾 WPA2/WPA3 四向密碼安全交握</span>
+            </div>
+
+            <!-- Item 4: DHCP/DNS/ARP -->
+            <div class="p-2.5 ui-tertiary rounded-xl border flex flex-col justify-between space-y-2 group hover:border-emerald-500/50 transition shadow-sm">
+              <div class="flex items-center justify-between font-sans">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center space-x-1">
+                  <span>🌐</span>
+                  <span>區網三劍客</span>
+                </span>
+                <button onclick="copyText(this)" title="複製過濾語法" class="px-2 py-0.5 rounded ui-pill border hover:border-emerald-500 text-[10px] font-sans ui-sec hover:ui-title transition flex items-center space-x-1 shadow-sm">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                  <span>複製</span>
+                </button>
+              </div>
+              <div class="p-1.5 rounded ui-code font-mono text-[11px] font-bold text-emerald-400 select-all border ui-border-sub cmd-text break-all">
+                bootp || dns || arp
+              </div>
+              <span class="text-[11px] ui-sec font-sans leading-tight">過濾 DHCP、DNS 與 ARP 基礎網路封包</span>
+            </div>
+
+            <!-- Item 5: QUIC -->
+            <div class="p-2.5 ui-tertiary rounded-xl border flex flex-col justify-between space-y-2 group hover:border-amber-500/50 transition shadow-sm">
+              <div class="flex items-center justify-between font-sans">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center space-x-1">
+                  <span>🚀</span>
+                  <span>HTTP/3 (QUIC)</span>
+                </span>
+                <button onclick="copyText(this)" title="複製過濾語法" class="px-2 py-0.5 rounded ui-pill border hover:border-amber-500 text-[10px] font-sans ui-sec hover:ui-title transition flex items-center space-x-1 shadow-sm">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                  <span>複製</span>
+                </button>
+              </div>
+              <div class="p-1.5 rounded ui-code font-mono text-[11px] font-bold text-amber-400 select-all border ui-border-sub cmd-text break-all">
+                quic
+              </div>
+              <span class="text-[11px] ui-sec font-sans leading-tight">過濾新世代 HTTP/3 與 YouTube QUIC 串流</span>
+            </div>
+
+            <!-- Item 6: mDNS / SSDP -->
+            <div class="p-2.5 ui-tertiary rounded-xl border flex flex-col justify-between space-y-2 group hover:border-indigo-500/50 transition shadow-sm">
+              <div class="flex items-center justify-between font-sans">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 flex items-center space-x-1">
+                  <span>🔍</span>
+                  <span>微服務發現</span>
+                </span>
+                <button onclick="copyText(this)" title="複製過濾語法" class="px-2 py-0.5 rounded ui-pill border hover:border-indigo-500 text-[10px] font-sans ui-sec hover:ui-title transition flex items-center space-x-1 shadow-sm">
+                  <i data-lucide="copy" class="w-3 h-3"></i>
+                  <span>複製</span>
+                </button>
+              </div>
+              <div class="p-1.5 rounded ui-code font-mono text-[11px] font-bold text-indigo-400 select-all border ui-border-sub cmd-text break-all">
+                mdns || ssdp
+              </div>
+              <span class="text-[11px] ui-sec font-sans leading-tight">過濾區域網路設備微服務自動發現</span>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tab 5: RF Band Comparison -->
+      <div id="tab-channels" class="hidden p-3.5 sm:p-5 space-y-3 sm:space-y-4">
+        <h4 class="ui-title text-xs sm:text-sm font-bold">頻段抗干擾特性與覆蓋比較表</h4>
+        <div class="overflow-x-auto no-scrollbar">
+          <table class="w-full text-left text-xs border ui-border rounded-lg overflow-hidden min-w-[500px]">
+            <thead class="ui-subcard ui-sec font-semibold border-b ui-border">
+              <tr>
+                <th class="p-2.5">頻段規格</th>
+                <th class="p-2.5">推薦頻道</th>
+                <th class="p-2.5">最大功率</th>
+                <th class="p-2.5">穿牆</th>
+                <th class="p-2.5">雜訊</th>
+                <th class="p-2.5">主要適用場景</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y ui-border-sub font-mono ui-title text-[11px]">
+              <tr class="hover:opacity-80">
+                <td class="p-2.5 font-bold text-emerald-500">5GHz (UNII-1)</td>
+                <td class="p-2.5">Ch 36 ~ 48</td>
+                <td class="p-2.5">23 dBm</td>
+                <td class="p-2.5 font-sans">中等</td>
+                <td class="p-2.5 text-emerald-500 font-sans">極低</td>
+                <td class="p-2.5 font-sans">近距離高速吞吐測速 (預設)</td>
+              </tr>
+              <tr class="hover:opacity-80">
+                <td class="p-2.5 font-bold text-cyan-500">5GHz (UNII-3)</td>
+                <td class="p-2.5">Ch 149 ~ 165</td>
+                <td class="p-2.5">30 dBm</td>
+                <td class="p-2.5 font-sans">較強</td>
+                <td class="p-2.5 text-emerald-500 font-sans">低</td>
+                <td class="p-2.5 font-sans">較遠距離或高功率穿透測試</td>
+              </tr>
+              <tr class="hover:opacity-80">
+                <td class="p-2.5 font-bold text-amber-500">2.4GHz</td>
+                <td class="p-2.5">Ch 1, 6, 11</td>
+                <td class="p-2.5">30 dBm</td>
+                <td class="p-2.5 text-emerald-500 font-sans">極強</td>
+                <td class="p-2.5 text-rose-500 font-sans">偏高</td>
+                <td class="p-2.5 font-sans">跨樓層/長距離弱訊號診斷</td>
+              </tr>
+              <tr class="hover:opacity-80 ui-subcard">
+                <td class="p-2.5 font-bold text-purple-500">6GHz (6E)</td>
+                <td class="p-2.5">Ch 37 (PSC)</td>
+                <td class="p-2.5">受限 NO-IR</td>
+                <td class="p-2.5 font-sans">弱</td>
+                <td class="p-2.5 font-sans">無干擾</td>
+                <td class="p-2.5 font-sans">Client 接收與 6G 監聽模式</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 6: Wireless Networking Educational Guide (無線網路學習手冊) -->
+      <div id="tab-guide" class="hidden p-3.5 sm:p-6 space-y-5 sm:space-y-6">
+        
+        <!-- Header Banner -->
+        <div class="ui-subcard p-4 sm:p-5 rounded-xl border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center space-x-2 text-emerald-500 mb-1">
+              <i data-lucide="graduation-cap" class="w-5 h-5"></i>
+              <span class="text-xs font-bold uppercase tracking-wider">Wi-Fi 射頻診斷與無線網路實戰知識庫</span>
+            </div>
+            <h3 class="ui-title text-base sm:text-lg font-extrabold">無線網路學習手冊 (Wireless Diagnostic Field Manual)</h3>
+            <p class="ui-sec text-xs sm:text-sm mt-1">
+              本手冊完整收錄本工作台「五大實戰測試模組之功能與目的」以及「六大核心無線射頻理論知識庫」，將深奧的 802.11 射頻與通訊協定轉化為直觀易讀的實戰指引。
+            </p>
+          </div>
+          <div class="flex items-center space-x-2 shrink-0">
+            <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 text-xs font-semibold font-mono">IEEE 802.11ax / Wi-Fi 6E</span>
+          </div>
+        </div>
+
+        <!-- 📑 Table of Contents (目錄索引卡片) -->
+        <div class="ui-card border rounded-xl p-3.5 sm:p-5 shadow-sm space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b ui-border-sub pb-3">
+            <div class="flex items-center space-x-2">
+              <span class="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-500">
+                <i data-lucide="list-ordered" class="w-4 h-4"></i>
+              </span>
+              <div>
+                <h4 class="ui-title text-xs sm:text-sm font-bold">學習手冊目錄索引 (Table of Contents)</h4>
+                <p class="ui-sec text-[10px] sm:text-[11px]">點選任一單元即可自動展開該卡片並平滑滾動閱讀</p>
+              </div>
+            </div>
+            <!-- Global Expand / Collapse Controls -->
+            <div class="flex items-center space-x-2 shrink-0">
+              <button onclick="toggleAllGuideSections(true)" class="px-2.5 py-1 text-xs rounded-lg ui-pill border hover:opacity-80 transition flex items-center space-x-1 font-semibold text-emerald-500 shadow-sm">
+                <i data-lucide="chevrons-down" class="w-3.5 h-3.5"></i>
+                <span>全部展開</span>
+              </button>
+              <button onclick="toggleAllGuideSections(false)" class="px-2.5 py-1 text-xs rounded-lg ui-pill border hover:opacity-80 transition flex items-center space-x-1 font-semibold ui-sec shadow-sm">
+                <i data-lucide="chevrons-up" class="w-3.5 h-3.5"></i>
+                <span>全部收合</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section A: 5 Diagnostic Tests -->
+          <div class="space-y-1.5">
+            <div class="text-xs font-bold text-emerald-500 flex items-center space-x-1.5">
+              <i data-lucide="crosshair" class="w-3.5 h-3.5"></i>
+              <span>第一篇：五大實戰測試功能與目的 (Diagnostic Tests Guide)</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 pt-1">
+              <button onclick="jumpToGuideSection('test-1')" class="p-2.5 rounded-lg ui-subcard border hover:border-emerald-500 text-left transition flex flex-col justify-between group">
+                <div class="flex items-center justify-between">
+                  <span class="text-emerald-500 font-bold font-mono text-[10px]">模組 01</span>
+                  <i data-lucide="gauge" class="w-3.5 h-3.5 text-emerald-500"></i>
+                </div>
+                <div class="ui-title font-bold text-xs truncate mt-1.5 group-hover:text-emerald-500">實機極限測速</div>
+                <div class="ui-sec text-[10px] truncate mt-0.5">雙向吞吐量 / iPerf3 壓測</div>
+              </button>
+
+              <button onclick="jumpToGuideSection('test-2')" class="p-2.5 rounded-lg ui-subcard border hover:border-cyan-500 text-left transition flex flex-col justify-between group">
+                <div class="flex items-center justify-between">
+                  <span class="text-cyan-500 font-bold font-mono text-[10px]">模組 02</span>
+                  <i data-lucide="activity" class="w-3.5 h-3.5 text-cyan-500"></i>
+                </div>
+                <div class="ui-title font-bold text-xs truncate mt-1.5 group-hover:text-cyan-500">Ping 延遲與抖動</div>
+                <div class="ui-sec text-[10px] truncate mt-0.5">RTT 時延 / 波動穩定度</div>
+              </button>
+
+              <button onclick="jumpToGuideSection('test-3')" class="p-2.5 rounded-lg ui-subcard border hover:border-amber-500 text-left transition flex flex-col justify-between group">
+                <div class="flex items-center justify-between">
+                  <span class="text-amber-500 font-bold font-mono text-[10px]">模組 03</span>
+                  <i data-lucide="trending-up" class="w-3.5 h-3.5 text-amber-500"></i>
+                </div>
+                <div class="ui-title font-bold text-xs truncate mt-1.5 group-hover:text-amber-500">即時訊號折線圖</div>
+                <div class="ui-sec text-[10px] truncate mt-0.5">走動衰減 / 動態調速</div>
+              </button>
+
+              <button onclick="jumpToGuideSection('test-4')" class="p-2.5 rounded-lg ui-subcard border hover:border-purple-500 text-left transition flex flex-col justify-between group">
+                <div class="flex items-center justify-between">
+                  <span class="text-purple-500 font-bold font-mono text-[10px]">模組 04</span>
+                  <i data-lucide="file-search" class="w-3.5 h-3.5 text-purple-500"></i>
+                </div>
+                <div class="ui-title font-bold text-xs truncate mt-1.5 group-hover:text-purple-500">通訊協定與封包</div>
+                <div class="ui-sec text-[10px] truncate mt-0.5">tcpdump / 鑑識側錄</div>
+              </button>
+
+              <button onclick="jumpToGuideSection('test-5')" class="p-2.5 rounded-lg ui-subcard border hover:border-indigo-500 text-left transition flex flex-col justify-between group">
+                <div class="flex items-center justify-between">
+                  <span class="text-indigo-500 font-bold font-mono text-[10px]">模組 05</span>
+                  <i data-lucide="layers" class="w-3.5 h-3.5 text-indigo-500"></i>
+                </div>
+                <div class="ui-title font-bold text-xs truncate mt-1.5 group-hover:text-indigo-500">頻段抗干擾</div>
+                <div class="ui-sec text-[10px] truncate mt-0.5">2.4G/5G/6G 頻道規劃</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section B: 6 Core Wireless Theories -->
+          <div class="space-y-1.5 pt-2 border-t ui-border-sub">
+            <div class="text-xs font-bold text-cyan-500 flex items-center space-x-1.5">
+              <i data-lucide="atom" class="w-3.5 h-3.5"></i>
+              <span>第二篇：Wi-Fi 射頻與通訊核心理論知識庫 (Wireless Foundations)</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-1">
+              <button onclick="jumpToGuideSection('theory-1')" class="p-2.5 rounded-lg ui-subcard border hover:border-emerald-500 text-left transition flex flex-col justify-between group">
+                <div class="flex items-center justify-between">
+                  <span class="text-emerald-500 font-bold font-mono text-[10px]">理論 01</span>
+                  <i data-lucide="radio" class="w-3.5 h-3.5 text-emerald-500"></i>
+                </div>
+                <div class="ui-title font-bold text-xs truncate mt-1.5 group-hover:text-emerald-500">空中介面與訊號本質</div>
+                <div class="ui-sec text-[10px] truncate mt-0.5">空中介面由來 / dBm 對數 / 2T2R MIMO</div>
+              </button>
+
+              <button onclick="jumpToGuideSection('theory-2')" class="p-2.5 rounded-lg ui-subcard border hover:border-cyan-500 text-left transition flex flex-col justify-between group">
+                <div class="flex items-center justify-between">
+                  <span class="text-cyan-500 font-bold font-mono text-[10px]">理論 02</span>
+                  <i data-lucide="gauge" class="w-3.5 h-3.5 text-cyan-500"></i>
+                </div>
+                <div class="ui-title font-bold text-xs truncate mt-1.5 group-hover:text-cyan-500">物理速率 vs 吞吐量</div>
+                <div class="ui-sec text-[10px] truncate mt-0.5">半雙工 / CSMA/CA / 60%~70% 黃金定律</div>
+              </button>
+
+              <button onclick="jumpToGuideSection('theory-3')" class="p-2.5 rounded-lg ui-subcard border hover:border-amber-500 text-left transition flex flex-col justify-between group">
+                <div class="flex items-center justify-between">
+                  <span class="text-amber-500 font-bold font-mono text-[10px]">理論 03</span>
+                  <i data-lucide="trending-up" class="w-3.5 h-3.5 text-amber-500"></i>
+                </div>
+                <div class="ui-title font-bold text-xs truncate mt-1.5 group-hover:text-amber-500">MCS 調變編碼等級</div>
+                <div class="ui-sec text-[10px] truncate mt-0.5">QAM 星座圖 / Minstrel 動態調速</div>
+              </button>
+
+              <button onclick="jumpToGuideSection('theory-4')" class="p-2.5 rounded-lg ui-subcard border hover:border-indigo-500 text-left transition flex flex-col justify-between group">
+                <div class="flex items-center justify-between">
+                  <span class="text-indigo-500 font-bold font-mono text-[10px]">理論 04</span>
+                  <i data-lucide="layers" class="w-3.5 h-3.5 text-indigo-500"></i>
+                </div>
+                <div class="ui-title font-bold text-xs truncate mt-1.5 group-hover:text-indigo-500">三大頻段與 NO-IR 法規</div>
+                <div class="ui-sec text-[10px] truncate mt-0.5">2.4G/5G/6G 頻譜 / 為何網卡不能發 6G AP</div>
+              </button>
+
+              <button onclick="jumpToGuideSection('theory-5')" class="p-2.5 rounded-lg ui-subcard border hover:border-rose-500 text-left transition flex flex-col justify-between group">
+                <div class="flex items-center justify-between">
+                  <span class="text-rose-500 font-bold font-mono text-[10px]">理論 05</span>
+                  <i data-lucide="activity" class="w-3.5 h-3.5 text-rose-500"></i>
+                </div>
+                <div class="ui-title font-bold text-xs truncate mt-1.5 group-hover:text-rose-500">延遲、抖動與重傳</div>
+                <div class="ui-sec text-[10px] truncate mt-0.5">Jitter 緩衝區爆滿 / 手機省電喚醒首包</div>
+              </button>
+
+              <button onclick="jumpToGuideSection('theory-6')" class="p-2.5 rounded-lg ui-subcard border hover:border-purple-500 text-left transition flex flex-col justify-between group">
+                <div class="flex items-center justify-between">
+                  <span class="text-purple-500 font-bold font-mono text-[10px]">理論 06</span>
+                  <i data-lucide="shield-check" class="w-3.5 h-3.5 text-purple-500"></i>
+                </div>
+                <div class="ui-title font-bold text-xs truncate mt-1.5 group-hover:text-purple-500">Wi-Fi 安全與封包側錄</div>
+                <div class="ui-sec text-[10px] truncate mt-0.5">WPA2 離線字典攻擊 vs WPA3 前向保密</div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- ============================================================== -->
+        <!-- 第一篇：五大實戰測試功能與目的 (Diagnostic Tests Guide) -->
+        <!-- ============================================================== -->
+        <div class="flex items-center space-x-2 pt-2">
+          <span class="p-1 rounded bg-emerald-500/20 text-emerald-500 font-bold text-xs">PART 1</span>
+          <h3 class="ui-title text-sm sm:text-base font-extrabold">第一篇：五大實戰測試功能與診斷目的</h3>
+        </div>
+
+        <!-- Test 1: 實機極限測速 (Speedtest & iPerf3) -->
+        <div id="guide-test-1" class="ui-card border rounded-xl shadow-sm overflow-hidden transition-all">
+          <div onclick="toggleGuideSection('test-1')" class="flex items-center justify-between p-3.5 sm:p-4 cursor-pointer select-none hover:bg-slate-500/5 transition">
+            <div class="flex items-center space-x-2.5 min-w-0">
+              <span class="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-500 shrink-0"><i data-lucide="gauge" class="w-4 h-4"></i></span>
+              <div class="min-w-0">
+                <h4 class="ui-title text-xs sm:text-sm font-bold truncate">測試模組 01：實機極限測速 (Throughput Speedtest & iPerf3)</h4>
+                <p class="ui-sec text-[10px] sm:text-[11px] truncate">功能、目的、雙向頻寬評估標準與「物理速率 vs 真實吞吐量」核心定律</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2 shrink-0">
+              <span class="text-[10px] ui-sec hidden sm:inline">收合/展開</span>
+              <button class="ui-sec hover:ui-title p-1">
+                <i id="guide-test-1-icon" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200" style="transform: rotate(180deg);"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div id="guide-test-1-body" class="p-4 sm:p-5 pt-3 border-t ui-border-sub text-xs sm:text-sm ui-sec space-y-3.5 leading-relaxed">
+            <!-- 1. 功能與目的 -->
+            <div class="ui-subcard p-3.5 rounded-lg border space-y-1.5">
+              <div class="font-bold ui-title text-xs flex items-center space-x-1.5">
+                <i data-lucide="target" class="w-4 h-4 text-emerald-500"></i>
+                <span>🎯 測試功能與診斷目的</span>
+              </div>
+              <ul class="list-disc list-inside space-y-1 text-xs">
+                <li><strong class="ui-title">測試目的</strong>：評估在特定空間距離與實體天線阻隔下，基地台至用戶端手機/電腦之間「真實可用的應用層雙向 TCP 頻寬上限」。</li>
+                <li><strong class="ui-title">測試功能</strong>：
+                  <span class="block mt-0.5">▸ <strong>瀏覽器雙向測速 (Zero-Install)</strong>：手機掃描 QR Code 連線後，免裝任何 App，直接透過 HTTP 串流精確測量下載（基地台➔手機）與上傳（手機➔基地台）實測 Mbps。</span>
+                  <span class="block mt-0.5">▸ <strong>iPerf3 專業伺服器 (連接埠 5201)</strong>：支援在背景一鍵啟用，供進階網路工程師透過終端機指令或專業 App 進行多執行緒 (Multi-stream) 極限壓力測試。</span>
+                </li>
+              </ul>
+            </div>
+
+            <!-- 2. 判讀標準 -->
+            <div class="ui-subcard p-3.5 rounded-lg border space-y-2">
+              <div class="font-bold ui-title text-xs flex items-center space-x-1.5">
+                <i data-lucide="bar-chart-3" class="w-4 h-4 text-cyan-500"></i>
+                <span>📊 診斷指標與判讀標準 (以 5GHz 20MHz 頻寬為例)</span>
+              </div>
+              <div class="text-[11px] font-mono space-y-1">
+                <div class="flex justify-between p-1.5 rounded ui-tertiary border"><span class="text-emerald-500 font-bold">110 ~ 135 Mbps</span><span class="ui-sec font-sans">極佳：符合 MCS 8 理論淨頻寬上限，射頻傳輸無干擾</span></div>
+                <div class="flex justify-between p-1.5 rounded ui-tertiary border"><span class="text-cyan-500 font-bold">70 ~ 110 Mbps</span><span class="ui-sec font-sans">良好：中等距離或輕微隔間衰減，足以滿足 4K/8K 串流</span></div>
+                <div class="flex justify-between p-1.5 rounded ui-tertiary border"><span class="text-amber-500 font-bold">30 ~ 70 Mbps</span><span class="ui-sec font-sans">普通：隔多道牆，網卡已自動降階至 MCS 2~4</span></div>
+                <div class="flex justify-between p-1.5 rounded ui-tertiary border"><span class="text-rose-500 font-bold">&lt; 30 Mbps</span><span class="ui-sec font-sans">偏低：空氣中有嚴重同頻干擾，或超出有效涵蓋範圍</span></div>
+              </div>
+              <p class="text-[11px] text-amber-400">💡 <strong>上傳通常低於下載？</strong> 手機為節省電池，射頻發射功率通常僅有 10~15 dBm，遠低於 ALFA 外接天線的 23~30 dBm，因此手機上傳速率略低於下載屬正常物理現象。</p>
+            </div>
+
+            <!-- 3. 操作與實務 -->
+            <div class="ui-subcard p-3.5 rounded-lg border space-y-1.5">
+              <div class="font-bold ui-title text-xs flex items-center space-x-1.5">
+                <i data-lucide="terminal" class="w-4 h-4 text-emerald-500"></i>
+                <span>🛠️ iPerf3 終端機測試操作指引</span>
+              </div>
+              <div class="p-2.5 ui-code rounded-lg text-emerald-400 font-mono text-[11px] border ui-border space-y-1">
+                <div># 在用戶端手機（Termux 或 iPerf App）或筆電執行測試：</div>
+                <div class="text-cyan-400">iperf3 -c 10.42.0.1 -t 10 -P 4</div>
+                <div class="text-[10px] ui-sec">參數說明：-c (伺服器 IP), -t (測試秒數), -P 4 (4 條平行資料流全力壓測)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Test 2: Ping 延遲與抖動 (Ping Latency & Jitter) -->
+        <div id="guide-test-2" class="ui-card border rounded-xl shadow-sm overflow-hidden transition-all">
+          <div onclick="toggleGuideSection('test-2')" class="flex items-center justify-between p-3.5 sm:p-4 cursor-pointer select-none hover:bg-slate-500/5 transition">
+            <div class="flex items-center space-x-2.5 min-w-0">
+              <span class="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-500 shrink-0"><i data-lucide="activity" class="w-4 h-4"></i></span>
+              <div class="min-w-0">
+                <h4 class="ui-title text-xs sm:text-sm font-bold truncate">測試模組 02：Ping 延遲與抖動 (Ping Latency & Jitter)</h4>
+                <p class="ui-sec text-[10px] sm:text-[11px] truncate">功能、目的、往返時延 RTT 評量標準與抖動對即時語音電競的影響</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2 shrink-0">
+              <span class="text-[10px] ui-sec hidden sm:inline">收合/展開</span>
+              <button class="ui-sec hover:ui-title p-1">
+                <i id="guide-test-2-icon" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200" style="transform: rotate(0deg);"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div id="guide-test-2-body" class="hidden p-4 sm:p-5 pt-3 border-t ui-border-sub text-xs sm:text-sm ui-sec space-y-3.5 leading-relaxed">
+            <!-- 1. 功能與目的 -->
+            <div class="ui-subcard p-3.5 rounded-lg border space-y-1.5">
+              <div class="font-bold ui-title text-xs flex items-center space-x-1.5">
+                <i data-lucide="target" class="w-4 h-4 text-cyan-500"></i>
+                <span>🎯 測試功能與診斷目的</span>
+              </div>
+              <ul class="list-disc list-inside space-y-1 text-xs">
+                <li><strong class="ui-title">測試目的</strong>：評估無線空氣介質傳輸的「反應時間（時延）」與「連線穩定度（波動性）」，檢驗有無突發電磁干擾或封包遺失。</li>
+                <li><strong class="ui-title">測試功能</strong>：自動帶入已連線手機的 IP 位址（如 `10.42.0.254`），連續發射 ICMP 探測封包，精確統計出最小、平均、最大往返時間（RTT）、抖動波動值與封包遺失率。</li>
+              </ul>
+            </div>
+
+            <!-- 2. 判讀標準 -->
+            <div class="ui-subcard p-3.5 rounded-lg border space-y-2">
+              <div class="font-bold ui-title text-xs flex items-center space-x-1.5">
+                <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-500"></i>
+                <span>📊 延遲與抖動判讀標準</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                <div class="ui-tertiary p-2.5 rounded border">
+                  <div class="text-emerald-500 font-bold font-mono">延遲 &lt; 5 ms</div>
+                  <div class="text-[11px] ui-sec mt-1 font-sans">電競級表現：近距離無障礙，空中介質極度潔淨。</div>
+                </div>
+                <div class="ui-tertiary p-2.5 rounded border">
+                  <div class="text-cyan-500 font-bold font-mono">延遲 5 ~ 15 ms</div>
+                  <div class="text-[11px] ui-sec mt-1 font-sans">優良水準：日常網頁瀏覽、串流影音完全無感。</div>
+                </div>
+                <div class="ui-tertiary p-2.5 rounded border">
+                  <div class="text-rose-500 font-bold font-mono">延遲 &gt; 50 ms / 抖動高</div>
+                  <div class="text-[11px] ui-sec mt-1 font-sans">異常警訊：空間中有同頻強干擾，或手機處於弱訊號邊緣。</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. 操作與實務 -->
+            <div class="ui-subcard p-3.5 rounded-lg border space-y-1.5">
+              <div class="font-bold ui-title text-xs flex items-center space-x-1.5">
+                <i data-lucide="terminal" class="w-4 h-4 text-cyan-500"></i>
+                <span>🛠️ 命令列即時 Ping 探測</span>
+              </div>
+              <div class="p-2.5 ui-code rounded-lg text-cyan-400 font-mono text-[11px] border ui-border">
+                ping -c 20 10.42.0.254
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Test 3: 即時訊號折線圖 (Live RSSI & Rate Adaptation) -->
+        <div id="guide-test-3" class="ui-card border rounded-xl shadow-sm overflow-hidden transition-all">
+          <div onclick="toggleGuideSection('test-3')" class="flex items-center justify-between p-3.5 sm:p-4 cursor-pointer select-none hover:bg-slate-500/5 transition">
+            <div class="flex items-center space-x-2.5 min-w-0">
+              <span class="p-1.5 rounded-lg bg-amber-500/20 text-amber-500 shrink-0"><i data-lucide="trending-up" class="w-4 h-4"></i></span>
+              <div class="min-w-0">
+                <h4 class="ui-title text-xs sm:text-sm font-bold truncate">測試模組 03：即時訊號折線圖 (Live RSSI & Rate Adaptation)</h4>
+                <p class="ui-sec text-[10px] sm:text-[11px] truncate">功能、目的、雙軸動態監控與手持走動漫遊衰減測試</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2 shrink-0">
+              <span class="text-[10px] ui-sec hidden sm:inline">收合/展開</span>
+              <button class="ui-sec hover:ui-title p-1">
+                <i id="guide-test-3-icon" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200" style="transform: rotate(0deg);"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div id="guide-test-3-body" class="hidden p-4 sm:p-5 pt-3 border-t ui-border-sub text-xs sm:text-sm ui-sec space-y-3.5 leading-relaxed">
+            <!-- 1. 功能與目的 -->
+            <div class="ui-subcard p-3.5 rounded-lg border space-y-1.5">
+              <div class="font-bold ui-title text-xs flex items-center space-x-1.5">
+                <i data-lucide="target" class="w-4 h-4 text-amber-500"></i>
+                <span>🎯 測試功能與診斷目的</span>
+              </div>
+              <ul class="list-disc list-inside space-y-1 text-xs">
+                <li><strong class="ui-title">測試目的</strong>：手持手機在辦公室或住家不同房間走動時，動態觀測實體障礙物（水泥牆、鐵門）與距離對電磁波造成的路徑損耗（Path Loss），檢驗天線涵蓋無死角。</li>
+                <li><strong class="ui-title">測試功能</strong>：工作台每秒精確擷取連線裝置的訊號強度（RSSI dBm）、雙天線數值、MCS 調變階梯、即時 Tx/Rx 協商速率與重傳次數，繪製成即時雙軸折線圖。</li>
+              </ul>
+            </div>
+
+            <!-- 2. 判讀標準 -->
+            <div class="ui-subcard p-3.5 rounded-lg border space-y-2">
+              <div class="font-bold ui-title text-xs flex items-center space-x-1.5">
+                <i data-lucide="bar-chart-3" class="w-4 h-4 text-purple-500"></i>
+                <span>📊 RSSI 接收強度階梯標準</span>
+              </div>
+              <div class="text-[11px] font-mono space-y-1">
+                <div class="flex justify-between p-1.5 rounded ui-tertiary border"><span class="text-emerald-500 font-bold">-30 ~ -50 dBm</span><span class="ui-sec font-sans">極佳：基地台近距離，鎖定最高 MCS 8 (173.3 Mbps)</span></div>
+                <div class="flex justify-between p-1.5 rounded ui-tertiary border"><span class="text-cyan-500 font-bold">-50 ~ -65 dBm</span><span class="ui-sec font-sans">良好：日常最佳工作區間，維持全速運作</span></div>
+                <div class="flex justify-between p-1.5 rounded ui-tertiary border"><span class="text-amber-500 font-bold">-65 ~ -75 dBm</span><span class="ui-sec font-sans">普通：漫遊降速臨界點，開始降階為 MCS 4~6</span></div>
+                <div class="flex justify-between p-1.5 rounded ui-tertiary border"><span class="text-rose-500 font-bold">-75 ~ -85 dBm</span><span class="ui-sec font-sans">微弱：隔水泥牆，降至低階調變以抵抗雜訊</span></div>
+                <div class="flex justify-between p-1.5 rounded ui-tertiary border"><span class="ui-muted font-bold">&lt; -85 dBm</span><span class="ui-sec font-sans">斷線邊緣：封包重傳飆升，即將中斷交握</span></div>
+              </div>
+            </div>
+
+            <!-- 3. 操作與實務 -->
+            <div class="ui-subcard p-3.5 rounded-lg border space-y-1.5">
+              <div class="font-bold ui-title text-xs flex items-center space-x-1.5">
+                <i data-lucide="terminal" class="w-4 h-4 text-amber-500"></i>
+                <span>🛠️ 底層原生訊號查詢指令</span>
+              </div>
+              <div class="p-2.5 ui-code rounded-lg text-amber-400 font-mono text-[11px] border ui-border">
+                sudo iw dev wlx00c0cabb0b45 station dump
+              </div>
+            </div>
+          </div>
+        </div>
+
+                <!-- Test 4: 通訊協定與封包 (Protocols & Packet Inspection) -->
+        <div id="guide-test-4" class="ui-card border rounded-xl shadow-sm overflow-hidden transition-all">
+          <div onclick="toggleGuideSection('test-4')" class="flex items-center justify-between p-3.5 sm:p-4 cursor-pointer select-none hover:bg-slate-500/5 transition">
+            <div class="flex items-center space-x-2.5 min-w-0">
+              <span class="p-1.5 rounded-lg bg-purple-500/20 text-purple-500 shrink-0"><i data-lucide="file-search" class="w-4 h-4"></i></span>
+              <div class="min-w-0">
+                <h4 class="ui-title text-xs sm:text-sm font-bold truncate">測試模組 04：通訊協定與封包 (Protocols & Packet Inspection)</h4>
+                <p class="ui-sec text-[10px] sm:text-[11px] truncate">功能、目的、tcpdump 實戰指令庫與 Wi-Fi 連線全生命週期協定排查</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2 shrink-0">
+              <span class="text-[10px] ui-sec hidden sm:inline">收合/展開</span>
+              <button class="ui-sec hover:ui-title p-1">
+                <i id="guide-test-4-icon" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200" style="transform: rotate(0deg);"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div id="guide-test-4-body" class="hidden p-4 sm:p-5 pt-3 border-t ui-border-sub text-xs sm:text-sm ui-sec space-y-3.5 leading-relaxed">
+            <!-- 1. 功能與目的 -->
+            <div class="ui-subcard p-3.5 rounded-lg border space-y-1.5">
+              <div class="font-bold ui-title text-xs flex items-center space-x-1.5">
+                <i data-lucide="target" class="w-4 h-4 text-purple-500"></i>
+                <span>🎯 測試功能與診斷目的</span>
+              </div>
+              <ul class="list-disc list-inside space-y-1 text-xs">
+                <li><strong class="ui-title">測試目的</strong>：深度檢視手機連入熱點後「從配發 IP 到正常上網」的完整通訊行為，排除「連得上 Wi-Fi 卻無法上網」、「一直卡在取得 IP」、「DNS 解析卡頓」或「跳不出認證網頁」的真正根因。</li>
+                <li><strong class="ui-title">測試功能</strong>：透過 Linux 原生 `tcpdump` 工具直接在射頻介面 (`wlx00c0cabb0b45`) 上側錄，涵蓋 DHCP DORA、DNS/DoT、ARP、Captive Portal 204、mDNS、NTP 與 QUIC 流量，並支援匯出 PCAP 檔供 Wireshark 離線鑑識。</li>
+              </ul>
+            </div>
+
+            <!-- 2. 實戰 tcpdump 指令庫速查表 -->
+            <div class="ui-subcard p-3.5 rounded-lg border space-y-2">
+              <div class="font-bold ui-title text-xs flex items-center space-x-1.5">
+                <i data-lucide="terminal" class="w-4 h-4 text-cyan-500"></i>
+                <span>🛠️ 實戰 tcpdump 快速側錄指令庫 (終端機直接複製執行)</span>
+              </div>
+              
+              <div class="space-y-2 text-xs font-mono">
+                <!-- Command 1: DHCP -->
+                <div class="p-2.5 ui-code rounded border ui-border-sub">
+                  <div class="text-emerald-400 font-bold font-sans flex items-center justify-between">
+                    <span>1. 側錄 DHCP 四向交握 (排查卡在「正在取得 IP 位址」)</span>
+                    <span class="text-[10px] ui-sec font-mono">UDP 67/68</span>
+                  </div>
+                  <div class="text-cyan-400 mt-1 select-all">sudo tcpdump -i wlx00c0cabb0b45 -n "port 67 or port 68" -v</div>
+                  <div class="text-[11px] ui-sec mt-1 font-sans">▸ 觀察 DORA 流程：Discover ➔ Offer ➔ Request ➔ ACK 是否完整配發 IP 與閘道。</div>
+                </div>
+
+                <!-- Command 2: Captive Portal / 204 -->
+                <div class="p-2.5 ui-code rounded border ui-border-sub">
+                  <div class="text-emerald-400 font-bold font-sans flex items-center justify-between">
+                    <span>2. 側錄上網連通性探測與強制門戶檢測 (Captive Portal Detection)</span>
+                    <span class="text-[10px] ui-sec font-mono">HTTP 204</span>
+                  </div>
+                  <div class="text-cyan-400 mt-1 select-all">sudo tcpdump -i wlx00c0cabb0b45 -n "tcp port 80 and (tcp[tcpflags] & tcp-push != 0)"</div>
+                  <div class="text-[11px] ui-sec mt-1 font-sans">▸ 觀察 Android (`generate_204`) 與 Apple (`hotspot-detect.html`) 的上網探測請求；若未收到 204 或遭遇重導向，手機會跳出「驚嘆號」或自動彈出認證網頁。</div>
+                </div>
+
+                <!-- Command 3: mDNS & SSDP -->
+                <div class="p-2.5 ui-code rounded border ui-border-sub">
+                  <div class="text-emerald-400 font-bold font-sans flex items-center justify-between">
+                    <span>3. 側錄區域網路設備自動發現 (AirPlay / Chromecast / 智慧家庭)</span>
+                    <span class="text-[10px] ui-sec font-mono">mDNS / SSDP</span>
+                  </div>
+                  <div class="text-cyan-400 mt-1 select-all">sudo tcpdump -i wlx00c0cabb0b45 -n "udp port 5353 or udp port 1900"</div>
+                  <div class="text-[11px] ui-sec mt-1 font-sans">▸ 檢測手機是否持續向多點傳送位址 (`224.0.0.251` / `239.255.255.250`) 廣播尋找投影設備或區域網路印表機。</div>
+                </div>
+
+                <!-- Command 4: QUIC / HTTP3 -->
+                <div class="p-2.5 ui-code rounded border ui-border-sub">
+                  <div class="text-emerald-400 font-bold font-sans flex items-center justify-between">
+                    <span>4. 側錄現代 Google / YouTube 之 QUIC (HTTP/3) 串流</span>
+                    <span class="text-[10px] ui-sec font-mono">UDP 443</span>
+                  </div>
+                  <div class="text-cyan-400 mt-1 select-all">sudo tcpdump -i wlx00c0cabb0b45 -n "udp port 443" -c 30</div>
+                  <div class="text-[11px] ui-sec mt-1 font-sans">▸ 現代影音串流大多採用 UDP 443，具備 0-RTT 快速重連與抗弱訊號連線遷移特性。</div>
+                </div>
+
+                <!-- Command 5: Save PCAP -->
+                <div class="p-2.5 ui-code rounded border ui-border-sub">
+                  <div class="text-emerald-400 font-bold font-sans flex items-center justify-between">
+                    <span>5. 完整封包側錄並儲存為 PCAP 檔案 (供 Wireshark 深度鑑識)</span>
+                    <span class="text-[10px] ui-sec font-mono">*.pcap</span>
+                  </div>
+                  <div class="text-cyan-400 mt-1 select-all">sudo tcpdump -i wlx00c0cabb0b45 -w /tmp/wifi_diagnostic.pcap -c 1000</div>
+                  <div class="text-[11px] ui-sec mt-1 font-sans">▸ 將擷取的 1000 個封包直接存檔，可用 Wireshark 打開進行時間軸與協定層次圖形化分析。</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. 判讀標準與故障排查 -->
+            <div class="ui-subcard p-3.5 rounded-lg border space-y-2">
+              <div class="font-bold ui-title text-xs flex items-center space-x-1.5">
+                <i data-lucide="shield-alert" class="w-4 h-4 text-amber-500"></i>
+                <span>📊 連線故障排查實務情境判讀</span>
+              </div>
+              <ul class="list-disc list-inside space-y-1.5 text-xs">
+                <li><strong class="text-rose-400">DNS 失敗 (Port 53)</strong>：若手機送出 DNS Request 卻遲遲沒有收到 DNS Response，代表本機 NAT 轉送中斷或上游 DNS 伺服器無回應。</li>
+                <li><strong class="text-amber-400">ARP 風暴或 IP 衝突</strong>：若看到同一 IP 持續在區網發送大量的 ARP Request，代表有兩台設備被配發了相同 IP。</li>
+                <li><strong class="text-cyan-400">NTP 校時異常 (Port 123)</strong>：若設備本機時間與基地台相差過大，會導致所有 HTTPS 網站跳出憑證無效警告。</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Test 5: 頻段抗干擾 (RF Band & Channel Comparison) -->
+        <div id="guide-test-5" class="ui-card border rounded-xl shadow-sm overflow-hidden transition-all">
+          <div onclick="toggleGuideSection('test-5')" class="flex items-center justify-between p-3.5 sm:p-4 cursor-pointer select-none hover:bg-slate-500/5 transition">
+            <div class="flex items-center space-x-2.5 min-w-0">
+              <span class="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-500 shrink-0"><i data-lucide="layers" class="w-4 h-4"></i></span>
+              <div class="min-w-0">
+                <h4 class="ui-title text-xs sm:text-sm font-bold truncate">測試模組 05：頻段抗干擾 (RF Band & Channel Comparison)</h4>
+                <p class="ui-sec text-[10px] sm:text-[11px] truncate">功能、目的、頻段特性評估與最佳頻道規劃</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2 shrink-0">
+              <span class="text-[10px] ui-sec hidden sm:inline">收合/展開</span>
+              <button class="ui-sec hover:ui-title p-1">
+                <i id="guide-test-5-icon" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200" style="transform: rotate(0deg);"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div id="guide-test-5-body" class="hidden p-4 sm:p-5 pt-3 border-t ui-border-sub text-xs sm:text-sm ui-sec space-y-3.5 leading-relaxed">
+            <!-- 1. 功能與目的 -->
+            <div class="ui-subcard p-3.5 rounded-lg border space-y-1.5">
+              <div class="font-bold ui-title text-xs flex items-center space-x-1.5">
+                <i data-lucide="target" class="w-4 h-4 text-indigo-500"></i>
+                <span>🎯 測試功能與診斷目的</span>
+              </div>
+              <ul class="list-disc list-inside space-y-1 text-xs">
+                <li><strong class="ui-title">測試目的</strong>：評估周遭環境 2.4GHz、5GHz 與 6GHz 頻譜的電磁波擁擠程度，避開同頻干擾與鄰頻干擾，引導挑選最潔淨之頻道。</li>
+                <li><strong class="ui-title">測試功能</strong>：提供不同頻段之發射功率、頻寬上限與干擾對比表，並能即時切換 ALFA 網卡至不同頻道進行抗干擾對比實測。</li>
+              </ul>
+            </div>
+
+            <!-- 2. 頻道選用指南 -->
+            <div class="ui-subcard p-3.5 rounded-lg border space-y-2">
+              <div class="font-bold ui-title text-xs flex items-center space-x-1.5">
+                <i data-lucide="compass" class="w-4 h-4 text-cyan-500"></i>
+                <span>📊 現場抗干擾頻道規劃最佳指引</span>
+              </div>
+              <ul class="list-disc list-inside text-xs space-y-1">
+                <li><strong class="text-amber-500">2.4GHz 頻段</strong>：絕對只使用 <strong class="ui-title">Ch 1、Ch 6 或 Ch 11</strong>（唯三完全互不重疊的乾淨頻道）。切勿使用 Ch 2~5 或 7~10，否則會同時遭受左右兩側頻道的非對稱同頻干擾！</li>
+                <li><strong class="text-cyan-500">5GHz 頻段</strong>：優先選用 <strong class="ui-title">UNII-1 (Ch 36~48)</strong> 或 <strong class="ui-title">UNII-3 (Ch 149~165)</strong>。無需等待 DFS 雷達避讓，發射功率充足且頻譜極為乾淨。</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- 第二篇：Wi-Fi 射頻與通訊核心理論知識庫 (Wireless Foundations) -->
+        <!-- ============================================================== -->
+        <div class="flex items-center space-x-2 pt-4">
+          <span class="p-1 rounded bg-cyan-500/20 text-cyan-500 font-bold text-xs">PART 2</span>
+          <h3 class="ui-title text-sm sm:text-base font-extrabold">第二篇：Wi-Fi 射頻與通訊核心理論知識庫</h3>
+        </div>
+
+        <!-- Theory 1: 空中介面與訊號本質 -->
+        <div id="guide-theory-1" class="ui-card border rounded-xl shadow-sm overflow-hidden transition-all">
+          <div onclick="toggleGuideSection('theory-1')" class="flex items-center justify-between p-3.5 sm:p-4 cursor-pointer select-none hover:bg-slate-500/5 transition">
+            <div class="flex items-center space-x-2.5 min-w-0">
+              <span class="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-500 shrink-0"><i data-lucide="radio" class="w-4 h-4"></i></span>
+              <div class="min-w-0">
+                <h4 class="ui-title text-xs sm:text-sm font-bold truncate">核心理論 01：空中介面（Air Interface / OTA）與電磁波訊號本質</h4>
+                <p class="ui-sec text-[10px] sm:text-[11px] truncate">空中介面由來、dBm 負對數毫瓦換算、RSSI 接收階梯與 2T2R MIMO 雙天線</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2 shrink-0">
+              <span class="text-[10px] ui-sec hidden sm:inline">收合/展開</span>
+              <button class="ui-sec hover:ui-title p-1">
+                <i id="guide-theory-1-icon" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200" style="transform: rotate(0deg);"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div id="guide-theory-1-body" class="hidden p-4 sm:p-5 pt-3 border-t ui-border-sub text-xs sm:text-sm ui-sec space-y-3.5 leading-relaxed">
+            <div>
+              <strong class="ui-title text-xs sm:text-sm">什麼是空中介面（Air Interface / Over-The-Air, OTA）？</strong><br>
+              在電腦網路中，傳輸媒介分為「有線」與「無線」。有線網路（雙絞線、光纖）具有封閉且高度隔離的實體傳導通道；而無線通訊（Wi-Fi、行動網路）則是將電氣訊號轉換為高頻電磁波，以<strong class="text-emerald-500">開放共享的空氣</strong>作為傳播媒介。由於空氣中充滿了各種電磁雜訊與反射阻擋，因此「空中介面」的物理特性直接決定了連線品質。<br>
+              <span class="text-[11px] text-amber-400 mt-0.5 block">💡 <strong>名詞比較</strong>：中國大陸普通話常將其簡稱為「空口」，而在臺灣正體中文通訊與電信規範中，標準學術與工程術語皆為<strong>「空中介面」</strong>。</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              <!-- RSSI Card -->
+              <div class="ui-subcard p-3.5 rounded-lg border space-y-2">
+                <span class="font-bold text-xs ui-title flex items-center space-x-1.5">
+                  <i data-lucide="signal" class="w-3.5 h-3.5 text-amber-500"></i>
+                  <span>1. 接收訊號強度指標 (RSSI, dBm)</span>
+                </span>
+                <p class="text-xs">
+                  單位為 <code class="font-mono ui-code px-1 py-0.5 rounded">dBm</code>（毫瓦分貝），為負數對數標度。因為接收到的電磁波能量極其微弱（通常只有毫瓦的百萬分之一）：
+                  <span class="block text-[11px] font-mono text-emerald-400 mt-1">0 dBm = 1 mW | -30 dBm = 0.001 mW | -60 dBm = 0.000001 mW</span>
+                </p>
+                <div class="text-[11px] font-mono space-y-1 pt-1 border-t ui-border-sub">
+                  <div class="flex justify-between"><span class="text-emerald-500 font-bold">-30 ~ -50 dBm</span><span class="ui-sec font-sans">極佳（基地台旁，最高調變速率）</span></div>
+                  <div class="flex justify-between"><span class="text-cyan-500 font-bold">-50 ~ -65 dBm</span><span class="ui-sec font-sans">良好（高速上網、極限測速推薦）</span></div>
+                  <div class="flex justify-between"><span class="text-amber-500 font-bold">-65 ~ -75 dBm</span><span class="ui-sec font-sans">普通（漫遊臨界點，網卡開始降速）</span></div>
+                  <div class="flex justify-between"><span class="text-rose-500 font-bold">-75 ~ -85 dBm</span><span class="ui-sec font-sans">微弱（容易出現封包重傳與延遲抖動）</span></div>
+                  <div class="flex justify-between"><span class="ui-muted font-bold">&lt; -85 dBm</span><span class="ui-sec font-sans">斷線臨界（難以維持交握）</span></div>
+                </div>
+              </div>
+
+              <!-- 2T2R MIMO Card -->
+              <div class="ui-subcard p-3.5 rounded-lg border space-y-2">
+                <span class="font-bold text-xs ui-title flex items-center space-x-1.5">
+                  <i data-lucide="antenna" class="w-3.5 h-3.5 text-purple-500"></i>
+                  <span>2. 2T2R 雙天線架構 (MIMO & Ant 1 / Ant 2)</span>
+                </span>
+                <p class="text-xs">
+                  ALFA AWUS036AXML 配備兩支外接大天線，硬體為 <strong class="ui-title">2T2R</strong>（2 Transmit, 2 Receive，雙發雙收）：
+                </p>
+                <ul class="list-disc list-inside space-y-1 text-xs">
+                  <li><strong class="ui-title">空間多工 (Spatial Multiplexing)</strong>：同時發射 2 條不同的資料空間流（Spatial Streams, NSS=2），理論頻寬直接翻倍。</li>
+                  <li><strong class="ui-title">分集接收 (Rx Diversity)</strong>：兩支天線相隔一定距離，接收不同相位反射波，當一支天線陷入衰落（Fade）時，另一支天線仍可完整還原訊號。</li>
+                  <li><strong class="ui-title">波束成形 (Beamforming)</strong>：透過調節兩支天線的相位差，將電磁波能量聚焦朝向用戶端手機方向發射。</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Theory 2: 物理層速率 vs 吞吐量 -->
+        <div id="guide-theory-2" class="ui-card border rounded-xl shadow-sm overflow-hidden transition-all">
+          <div onclick="toggleGuideSection('theory-2')" class="flex items-center justify-between p-3.5 sm:p-4 cursor-pointer select-none hover:bg-slate-500/5 transition">
+            <div class="flex items-center space-x-2.5 min-w-0">
+              <span class="p-1.5 rounded-lg bg-cyan-500/20 text-cyan-500 shrink-0"><i data-lucide="gauge" class="w-4 h-4"></i></span>
+              <div class="min-w-0">
+                <h4 class="ui-title text-xs sm:text-sm font-bold truncate">核心理論 02：物理層速率 (PHY Rate) vs 真實測試吞吐量 (Throughput)</h4>
+                <p class="ui-sec text-[10px] sm:text-[11px] truncate">半雙工機制、CSMA/CA 載波偵聽、802.11 協定層層開銷與 60%~70% 黃金折損定律</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2 shrink-0">
+              <span class="text-[10px] ui-sec hidden sm:inline">收合/展開</span>
+              <button class="ui-sec hover:ui-title p-1">
+                <i id="guide-theory-2-icon" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200" style="transform: rotate(0deg);"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div id="guide-theory-2-body" class="hidden p-4 sm:p-5 pt-3 border-t ui-border-sub text-xs sm:text-sm ui-sec space-y-3.5 leading-relaxed">
+            <p>
+              <strong class="text-amber-500">工程常見疑惑：</strong>「為什麼手機 Wi-Fi 狀態顯示連線速率為 173.3 Mbps（或 866 Mbps），但在本測速台或 Speedtest 實測卻只有 120~135 Mbps？」
+            </p>
+            
+            <div class="ui-subcard p-4 rounded-lg border space-y-2.5 text-xs">
+              <div class="font-semibold ui-title text-sm">💡 Wi-Fi 頻寬折損的三大物理定律：</div>
+              <ol class="list-decimal list-inside space-y-2">
+                <li>
+                  <strong class="ui-title">半雙工機制 (Half-Duplex) 與空中介質爭用</strong>：
+                  Wi-Fi 不像有線網路線（雙絞線內部分離的 Tx/Rx 銅線）能同時全雙工收發。Wi-Fi 在同一個頻道上同一時間只能「要麼發射、要麼接收」，且必須遵循 <strong class="text-cyan-400">CSMA/CA (載波偵聽多重存取/碰撞避免)</strong> 協定——發送前必須先監聽空氣中是否有其他設備在說話，若有則需隨機「退避等待」(Backoff)。
+                </li>
+                <li>
+                  <strong class="ui-title">802.11 協定層層開銷 (Protocol Overhead)</strong>：
+                  傳輸資料時，實際 Payload 必須被包覆在物理層前導碼 (Preamble)、MAC 標頭、WPA 密碼學加密標記、TCP/IP 標頭之內；且每個發送出去的資料訊框，接收方都必須回傳一個實體層 <code class="font-mono text-emerald-400">ACK (確認封包)</code>。
+                </li>
+                <li>
+                  <strong class="ui-title">訊框間隔保護 (Inter-Frame Spacing)</strong>：
+                  為了防止多徑反射（Multipath Reflection）訊號自身重疊干擾，封包與封包之間強制保留 SIFS、DIFS 與保護區間 (Guard Interval, 800ns/400ns)。
+                </li>
+              </ol>
+
+              <div class="mt-2 p-2.5 ui-code rounded-lg text-emerald-400 font-mono text-xs border ui-border">
+                📌 <strong>工程換算黃金法則</strong>：<br>
+                真實世界的 Wi-Fi TCP 最大淨吞吐量 (Net TCP Goodput) ≈ 物理層協商速率 (PHY Rate) × <strong>60% ~ 70%</strong>。<br>
+                例：VHT-MCS 8 (173.3 Mbps) × 0.70 ≈ <strong>121.3 Mbps</strong>（與本工作台實測完美吻合！）。
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Theory 3: MCS & Rate Adaptation -->
+        <div id="guide-theory-3" class="ui-card border rounded-xl shadow-sm overflow-hidden transition-all">
+          <div onclick="toggleGuideSection('theory-3')" class="flex items-center justify-between p-3.5 sm:p-4 cursor-pointer select-none hover:bg-slate-500/5 transition">
+            <div class="flex items-center space-x-2.5 min-w-0">
+              <span class="p-1.5 rounded-lg bg-amber-500/20 text-amber-500 shrink-0"><i data-lucide="trending-up" class="w-4 h-4"></i></span>
+              <div class="min-w-0">
+                <h4 class="ui-title text-xs sm:text-sm font-bold truncate">核心理論 03：MCS 調變編碼等級與動態速率調適 (Rate Adaptation)</h4>
+                <p class="ui-sec text-[10px] sm:text-[11px] truncate">QAM 星座圖載貨密集度、Minstrel 演算法與走動降速保全連線機制</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2 shrink-0">
+              <span class="text-[10px] ui-sec hidden sm:inline">收合/展開</span>
+              <button class="ui-sec hover:ui-title p-1">
+                <i id="guide-theory-3-icon" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200" style="transform: rotate(0deg);"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div id="guide-theory-3-body" class="hidden p-4 sm:p-5 pt-3 border-t ui-border-sub text-xs sm:text-sm ui-sec space-y-3.5 leading-relaxed">
+            <p>
+              <strong class="ui-title">什麼是 MCS (Modulation and Coding Scheme)？</strong><br>
+              MCS 是 Wi-Fi 定義的一組「數位調變方式」與「前向錯誤更正編碼率（FEC Coding Rate）」的組合代碼。
+              調變就像「裝載貨物的密集度」：
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs font-mono">
+              <div class="ui-tertiary p-3 rounded-lg border">
+                <div class="text-emerald-500 font-bold">高階調變 (256-QAM)</div>
+                <div class="text-[11px] ui-sec mt-1 font-sans">每個符號攜帶 8 bits 資料。速度極快，但需要訊號極度乾淨（高 SNR），稍微有一點雜訊就會解碼錯誤。</div>
+              </div>
+              <div class="ui-tertiary p-3 rounded-lg border">
+                <div class="text-amber-500 font-bold">中階調變 (16/64-QAM)</div>
+                <div class="text-[11px] ui-sec mt-1 font-sans">每個符號攜帶 4~6 bits。兼顧速度與一定程度的抗雜訊能力。</div>
+              </div>
+              <div class="ui-tertiary p-3 rounded-lg border">
+                <div class="text-rose-500 font-bold">低階調變 (BPSK/QPSK)</div>
+                <div class="text-[11px] ui-sec mt-1 font-sans">每個符號只攜帶 1~2 bits。傳輸速度慢，但在訊號極弱（-80 dBm）甚至雜訊極大時依然能正確解析。</div>
+              </div>
+            </div>
+
+            <div class="ui-subcard p-3.5 rounded-lg border text-xs space-y-1.5">
+              <strong class="ui-title">📈 為什麼走動時「即時訊號折線圖」會看到速率階梯式變化？</strong><br>
+              這就是無線晶片內部的 <strong class="text-emerald-400">動態速率調適演算法 (Rate Adaptation Algorithm, 如 Minstrel)</strong>：
+              當手機遠離基地台時，硬體偵測到訊號衰減、雜訊比變差或 ACK 逾時重傳增加，驅動程式會<strong>主動放棄高階 MCS，降速至低階 MCS</strong>，寧可犧牲傳輸速率，也要保證封包成功抵達、連線絕不中斷！
+            </div>
+          </div>
+        </div>
+
+        <!-- Theory 4: Spectrum Bands & NO-IR Regulations -->
+        <div id="guide-theory-4" class="ui-card border rounded-xl shadow-sm overflow-hidden transition-all">
+          <div onclick="toggleGuideSection('theory-4')" class="flex items-center justify-between p-3.5 sm:p-4 cursor-pointer select-none hover:bg-slate-500/5 transition">
+            <div class="flex items-center space-x-2.5 min-w-0">
+              <span class="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-500 shrink-0"><i data-lucide="layers" class="w-4 h-4"></i></span>
+              <div class="min-w-0">
+                <h4 class="ui-title text-xs sm:text-sm font-bold truncate">核心理論 04：三大無線頻段 (2.4G / 5G / 6G) 全解密與 NO-IR 法規限制</h4>
+                <p class="ui-sec text-[10px] sm:text-[11px] truncate">頻段頻率規格表、微波設施保護、AFC 雲端資料庫與 USB 網卡 NO-IR 原委</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2 shrink-0">
+              <span class="text-[10px] ui-sec hidden sm:inline">收合/展開</span>
+              <button class="ui-sec hover:ui-title p-1">
+                <i id="guide-theory-4-icon" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200" style="transform: rotate(0deg);"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div id="guide-theory-4-body" class="hidden p-4 sm:p-5 pt-3 border-t ui-border-sub text-xs sm:text-sm ui-sec space-y-3.5 leading-relaxed">
+            <div class="overflow-x-auto no-scrollbar">
+              <table class="w-full text-left text-xs border ui-border rounded-lg overflow-hidden min-w-[520px]">
+                <thead class="ui-subcard ui-sec font-semibold border-b ui-border">
+                  <tr>
+                    <th class="p-2.5">無線頻段</th>
+                    <th class="p-2.5">中心頻率範圍</th>
+                    <th class="p-2.5">穿透力與波長</th>
+                    <th class="p-2.5">可用頻道數量</th>
+                    <th class="p-2.5">干擾源與頻譜特性</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y ui-border-sub font-mono">
+                  <tr>
+                    <td class="p-2.5 font-bold text-amber-500 font-sans">2.4 GHz</td>
+                    <td class="p-2.5">2400 ~ 2483.5 MHz</td>
+                    <td class="p-2.5 font-sans text-emerald-500">極強（波長約 12.5 cm，繞射佳）</td>
+                    <td class="p-2.5">只有 3 個不重疊頻道 (1, 6, 11)</td>
+                    <td class="p-2.5 font-sans text-rose-400">極度擁擠（藍牙、微波爐同頻干擾）</td>
+                  </tr>
+                  <tr class="ui-subcard">
+                    <td class="p-2.5 font-bold text-cyan-500 font-sans">5 GHz (UNII-1)</td>
+                    <td class="p-2.5">5150 ~ 5250 MHz</td>
+                    <td class="p-2.5 font-sans">中等（波長約 5.8 cm）</td>
+                    <td class="p-2.5">4 個 20MHz (Ch 36, 40, 44, 48)</td>
+                    <td class="p-2.5 font-sans text-emerald-400">室內專用，無 DFS 雷達干擾，速度飛快</td>
+                  </tr>
+                  <tr>
+                    <td class="p-2.5 font-bold text-cyan-500 font-sans">5 GHz (UNII-3)</td>
+                    <td class="p-2.5">5725 ~ 5850 MHz</td>
+                    <td class="p-2.5 font-sans">中等（高功率長距離）</td>
+                    <td class="p-2.5">5 個 20MHz (Ch 149 ~ 165)</td>
+                    <td class="p-2.5 font-sans text-emerald-400">高功率發射 (1000mW)，抗干擾能力極佳</td>
+                  </tr>
+                  <tr class="ui-subcard">
+                    <td class="p-2.5 font-bold text-purple-500 font-sans">6 GHz (Wi-Fi 6E)</td>
+                    <td class="p-2.5">5925 ~ 7125 MHz</td>
+                    <td class="p-2.5 font-sans">偏弱（波長最短，直線傳播）</td>
+                    <td class="p-2.5">高達 59 個 (20MHz) / 14 個 (80MHz)</td>
+                    <td class="p-2.5 font-sans text-purple-400">全新綠地頻譜，完全零舊世代干擾</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Deep Dive: 6GHz NO-IR Explanation -->
+            <div class="ui-subcard p-4 rounded-xl border border-purple-500/30 space-y-2">
+              <div class="flex items-center space-x-2 text-purple-400 font-bold text-xs sm:text-sm">
+                <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                <span>深入探討：為什麼隨身 USB 網卡在 Linux 核心無法發射 6GHz AP？</span>
+              </div>
+              <p class="text-xs leading-relaxed">
+                在嘗試啟動 6GHz AP 時會出現 <code class="font-mono text-rose-400">Frequency 6135 not allowed for AP mode, flags: 0x10003 NO-IR</code>。
+                這是因為各國通訊傳播委員會（美國 FCC、臺灣 NCC）：
+              </p>
+              <ul class="list-disc list-inside text-xs space-y-1.5 pt-1">
+                <li>
+                  <strong class="ui-title">保護既有微波通訊設施</strong>：6GHz 頻段原先已被衛星地面站、公用事業微波骨幹長年使用。
+                </li>
+                <li>
+                  <strong class="ui-title">標準功率 (SP) 與低功率室內 (LPI) 規定</strong>：
+                  固定的室內 AP 必須向 AFC（自動頻率協調）雲端資料庫註冊地理位置，確保不干擾微波電台；而像 ALFA 這類<strong>隨插即拔的可攜式 USB 網卡</strong>，被法規強制定義為「用戶端從屬裝置 (Client Station)」，絕對禁止私自進行主動射頻輻射（<code class="font-mono text-amber-400">NO-IR: No Initiating Radiation</code>）。
+                </li>
+                <li>
+                  <strong class="ui-title">正確使用 6GHz 的診斷方式</strong>：在 Linux 下，ALFA 網卡可全力作為 6GHz Client 連線，或進入 Monitor Mode 進行空中封包監聽！
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Theory 5: Latency, Jitter & Retries -->
+        <div id="guide-theory-5" class="ui-card border rounded-xl shadow-sm overflow-hidden transition-all">
+          <div onclick="toggleGuideSection('theory-5')" class="flex items-center justify-between p-3.5 sm:p-4 cursor-pointer select-none hover:bg-slate-500/5 transition">
+            <div class="flex items-center space-x-2.5 min-w-0">
+              <span class="p-1.5 rounded-lg bg-rose-500/20 text-rose-500 shrink-0"><i data-lucide="activity" class="w-4 h-4"></i></span>
+              <div class="min-w-0">
+                <h4 class="ui-title text-xs sm:text-base font-bold truncate">核心理論 05：延遲 (Latency)、抖動 (Jitter) 與封包重傳 (Retries)</h4>
+                <p class="ui-sec text-[10px] sm:text-[11px] truncate">往返時延 RTT、Jitter 緩衝區爆滿、手機省電喚醒特徵與撞包重傳</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2 shrink-0">
+              <span class="text-[10px] ui-sec hidden sm:inline">收合/展開</span>
+              <button class="ui-sec hover:ui-title p-1">
+                <i id="guide-theory-5-icon" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200" style="transform: rotate(0deg);"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div id="guide-theory-5-body" class="hidden p-4 sm:p-5 pt-3 border-t ui-border-sub text-xs sm:text-sm ui-sec space-y-3.5 leading-relaxed">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs sm:text-sm">
+              <div class="ui-subcard p-3.5 rounded-lg border space-y-1.5">
+                <span class="font-bold ui-title flex items-center space-x-1.5">
+                  <i data-lucide="timer" class="w-3.5 h-3.5 text-emerald-500"></i>
+                  <span>1. 往返延遲 (RTT / Ping)</span>
+                </span>
+                <p class="text-xs ui-sec">
+                  指封包從發送端抵達接收端，再收到回應的完整來回時間。
+                  優良的 Wi-Fi 空中傳輸延遲應落在 <strong class="text-emerald-400">2 ~ 8 ms</strong>。如果超過 30ms，通常代表空氣中有嚴重碰撞或網卡開啟了激進省電模式。
+                </p>
+              </div>
+
+              <div class="ui-subcard p-3.5 rounded-lg border space-y-1.5">
+                <span class="font-bold ui-title flex items-center space-x-1.5">
+                  <i data-lucide="waves" class="w-3.5 h-3.5 text-amber-500"></i>
+                  <span>2. 延遲抖動 (Jitter)</span>
+                </span>
+                <p class="text-xs ui-sec">
+                  連續封包之間延遲時間的「浮動變化標準差」。
+                  對於即時線上遊戲、VoIP 網路電話與視訊會議而言，<strong class="text-amber-400">抖動比延遲本身更具破壞性</strong>，高抖動會導致 Jitter Buffer 爆滿或欠載，引發音訊破音或遊戲畫面瞬間瞬移。
+                </p>
+              </div>
+
+              <div class="ui-subcard p-3.5 rounded-lg border space-y-1.5">
+                <span class="font-bold ui-title flex items-center space-x-1.5">
+                  <i data-lucide="repeat" class="w-3.5 h-3.5 text-rose-500"></i>
+                  <span>3. 封包重傳 (Tx Retries)</span>
+                </span>
+                <p class="text-xs ui-sec">
+                  當發送端把資料丟出去，但在指定時間內沒有收到接收端的 ACK 回應時，硬體晶片會立刻自動重發。
+                  重傳次數飆高代表空間中有強干擾源（如藍牙、其他 AP）撞包，會嚴重吃掉空氣頻寬。
+                </p>
+              </div>
+            </div>
+
+            <div class="ui-subcard p-3 rounded-lg border text-xs text-amber-400">
+              💡 <strong>手機省電模式 (Power Save) 的第一個 Ping 陷阱</strong>：手機休眠時 Wi-Fi 晶片會進入低功耗監聽狀態，收到第一個封包喚醒時常需 50~80ms，第二個封包即恢復為 3ms，此為省電特徵而非網路故障。
+            </div>
+          </div>
+        </div>
+
+                <!-- Theory 6: Wi-Fi Security & Packet Capture -->
+        <div id="guide-theory-6" class="ui-card border rounded-xl shadow-sm overflow-hidden transition-all">
+          <div onclick="toggleGuideSection('theory-6')" class="flex items-center justify-between p-3.5 sm:p-4 cursor-pointer select-none hover:bg-slate-500/5 transition">
+            <div class="flex items-center space-x-2.5 min-w-0">
+              <span class="p-1.5 rounded-lg bg-purple-500/20 text-purple-500 shrink-0"><i data-lucide="shield-check" class="w-4 h-4"></i></span>
+              <div class="min-w-0">
+                <h4 class="ui-title text-xs sm:text-base font-bold truncate">核心理論 06：Wi-Fi 安全防護、802.11 原生訊框與空中側錄鑑識</h4>
+                <p class="ui-sec text-[10px] sm:text-[11px] truncate">802.11 原生訊框光譜、WPA2 vs WPA3 前向保密性與 Wireshark 顯示過濾器</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2 shrink-0">
+              <span class="text-[10px] ui-sec hidden sm:inline">收合/展開</span>
+              <button class="ui-sec hover:ui-title p-1">
+                <i id="guide-theory-6-icon" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200" style="transform: rotate(0deg);"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div id="guide-theory-6-body" class="hidden p-4 sm:p-5 pt-3 border-t ui-border-sub text-xs sm:text-sm ui-sec space-y-3.5 leading-relaxed">
+            
+            <!-- 1. AP 模式 vs Monitor 監聽模式差異 -->
+            <div class="ui-subcard p-3.5 rounded-lg border space-y-2">
+              <div class="font-bold ui-title text-xs flex items-center space-x-1.5">
+                <i data-lucide="layers" class="w-4 h-4 text-emerald-500"></i>
+                <span>🔬 封包側錄的兩種維度：AP 介面側錄 vs. 空中監聽模式 (Monitor Mode)</span>
+              </div>
+              <p class="text-xs">
+                在無線通訊中，網卡處於不同模式時側錄到的內容有本質上的不同：
+              </p>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div class="ui-tertiary p-3 rounded-lg border">
+                  <div class="font-bold text-cyan-400">1. AP 介面側錄 (本工作台模式)</div>
+                  <div class="text-[11px] ui-sec mt-1">網卡晶片已將空中電磁波解調、解密並轉為標準乙太網路訊框（Ethernet Frame）。此模式聚焦於 <strong>Layer 3/4 網路層與傳輸層行為</strong>（IP、TCP/UDP、DHCP、DNS、HTTP、TLS），適合排查上網連線與服務狀態。</div>
+                </div>
+                <div class="ui-tertiary p-3 rounded-lg border">
+                  <div class="font-bold text-purple-400">2. 空中監聽模式 (Monitor Mode)</div>
+                  <div class="text-[11px] ui-sec mt-1">網卡處於混雜空中監聽，能直接擷取所有 <strong>802.11 Layer 2 原生無線訊框</strong>（RadioTap Header、管理訊框、控制訊框、交握訊框），無需連線或密碼即可側錄空中電波。</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. 802.11 原生空中訊框光譜 -->
+            <div class="ui-subcard p-3.5 rounded-lg border space-y-2">
+              <div class="font-bold ui-title text-xs flex items-center space-x-1.5">
+                <i data-lucide="radio" class="w-4 h-4 text-amber-500"></i>
+                <span>📡 802.11 原生空中管理、控制與交握訊框全光譜</span>
+              </div>
+              <div class="overflow-x-auto no-scrollbar">
+                <table class="w-full text-left text-xs border ui-border rounded-lg overflow-hidden min-w-[500px]">
+                  <thead class="ui-subcard ui-sec font-semibold border-b ui-border">
+                    <tr>
+                      <th class="p-2">類型</th>
+                      <th class="p-2">訊框名稱 (Frame)</th>
+                      <th class="p-2">空中物理行為與診斷用途</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y ui-border-sub text-[11px]">
+                    <tr>
+                      <td class="p-2 text-emerald-400 font-bold">管理訊框</td>
+                      <td class="p-2 font-mono">Beacon (信標訊框)</td>
+                      <td class="p-2">AP 每約 100ms 固定廣播，公告 SSID、頻道寬度、加密方式、國別碼與 WMM QoS。</td>
+                    </tr>
+                    <tr class="ui-subcard">
+                      <td class="p-2 text-emerald-400 font-bold">管理訊框</td>
+                      <td class="p-2 font-mono">Probe Req / Resp</td>
+                      <td class="p-2">手機尋找已知 Wi-Fi 時主動在空中發送探測請求，AP 收到後回覆能力與訊號強度。</td>
+                    </tr>
+                    <tr>
+                      <td class="p-2 text-emerald-400 font-bold">管理訊框</td>
+                      <td class="p-2 font-mono">Auth / Association</td>
+                      <td class="p-2">設備加入熱點的二階段交握：開放認證 (Auth) ➔ 關聯請求 (Assoc Req) ➔ AP 配發 AID (Assoc Resp)。</td>
+                    </tr>
+                    <tr class="ui-subcard">
+                      <td class="p-2 text-rose-400 font-bold">管理訊框</td>
+                      <td class="p-2 font-mono">Deauthentication</td>
+                      <td class="p-2">設備主動離開或中斷連線；在資安鑑識中，若空中出現海量 Deauth 代表遭遇惡意斷線攻擊。</td>
+                    </tr>
+                    <tr>
+                      <td class="p-2 text-cyan-400 font-bold">控制訊框</td>
+                      <td class="p-2 font-mono">RTS / CTS</td>
+                      <td class="p-2">發送大型資料前先預約空中通道，專門用於徹底解決「隱藏節點 (Hidden Node)」互撞問題。</td>
+                    </tr>
+                    <tr class="ui-subcard">
+                      <td class="p-2 text-cyan-400 font-bold">控制訊框</td>
+                      <td class="p-2 font-mono">Block ACK / ACK</td>
+                      <td class="p-2">接收端收到資料後回傳之實體確認訊框，未收到則觸發發送端硬體自動重傳。</td>
+                    </tr>
+                    <tr>
+                      <td class="p-2 text-purple-400 font-bold">安全交握</td>
+                      <td class="p-2 font-mono">EAPOL (4-Way Handshake)</td>
+                      <td class="p-2">WPA2/WPA3 密碼交握訊框，雙方在不傳輸明文密碼的前提下安全衍生動態會話金鑰 (PTK)。</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- 3. WPA2 vs WPA3 SAE -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div class="ui-subcard p-3.5 rounded-lg border space-y-2">
+                <span class="font-bold ui-title text-xs flex items-center space-x-1.5">
+                  <i data-lucide="lock" class="w-3.5 h-3.5 text-rose-500"></i>
+                  <span>WPA2-Personal (PSK) 的致命弱點</span>
+                </span>
+                <p class="text-xs">
+                  採用 4 向交握（4-Way Handshake）。攻擊者只要在空中側錄到手機連線時的 4 個 EAPOL 訊框，就能將雜湊帶回電腦使用高效能 GPU 進行無限制的「離線字典暴力破解」，只要密碼在字典中即宣告失守。
+                </p>
+              </div>
+
+              <div class="ui-subcard p-3.5 rounded-lg border space-y-2">
+                <span class="font-bold ui-title text-xs flex items-center space-x-1.5">
+                  <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-500"></i>
+                  <span>WPA3-Personal (SAE Dragonfly) 前向保密</span>
+                </span>
+                <p class="text-xs">
+                  強制導入 <strong class="text-emerald-400">SAE (同時對等驗證)</strong>，基於零知識證明與橢圓曲線密碼學，每次交握皆獨立動態生成暫時金鑰，具備「前向保密性 (Forward Secrecy)」——即使空中封包全被側錄，也絕對無法透過離線字典算回密碼！
+                </p>
+              </div>
+            </div>
+
+            <!-- 4. Wireshark 顯示過濾器精選語法 -->
+            <div class="ui-subcard p-3.5 rounded-lg border space-y-2">
+              <div class="font-bold ui-title text-xs flex items-center space-x-1.5">
+                <i data-lucide="filter" class="w-4 h-4 text-cyan-500"></i>
+                <span>🔍 Wireshark 實戰鑑識顯示過濾器精選語法 (Display Filters)</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+                <div class="p-2 ui-tertiary rounded border">
+                  <span class="text-cyan-400 font-bold select-all">wlan.fc.type_subtype == 0x08</span>
+                  <div class="text-[11px] ui-sec font-sans mt-0.5">只過濾 AP 廣播之 Beacon 信標訊框</div>
+                </div>
+                <div class="p-2 ui-tertiary rounded border">
+                  <span class="text-cyan-400 font-bold select-all">wlan.fc.type_subtype == 0x0c</span>
+                  <div class="text-[11px] ui-sec font-sans mt-0.5">過濾 Deauth 解除認證訊框 (攻擊檢測)</div>
+                </div>
+                <div class="p-2 ui-tertiary rounded border">
+                  <span class="text-cyan-400 font-bold select-all">eapol</span>
+                  <div class="text-[11px] ui-sec font-sans mt-0.5">過濾 WPA2/WPA3 四向密碼交握訊框</div>
+                </div>
+                <div class="p-2 ui-tertiary rounded border">
+                  <span class="text-cyan-400 font-bold select-all">bootp || dns || arp</span>
+                  <div class="text-[11px] ui-sec font-sans mt-0.5">過濾區網三劍客：DHCP、DNS 與 ARP 封包</div>
+                </div>
+                <div class="p-2 ui-tertiary rounded border">
+                  <span class="text-cyan-400 font-bold select-all">quic</span>
+                  <div class="text-[11px] ui-sec font-sans mt-0.5">過濾新世代 HTTP/3 與 YouTube QUIC 流量</div>
+                </div>
+                <div class="p-2 ui-tertiary rounded border">
+                  <span class="text-cyan-400 font-bold select-all">mdns || ssdp</span>
+                  <div class="text-[11px] ui-sec font-sans mt-0.5">過濾區域網路設備廣播尋找與服務發現</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Frontend Logic Scripts -->
+  <script src="/static/app.js?v=2.0"></script>
+</body>
+</html>

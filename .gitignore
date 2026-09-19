@@ -1,0 +1,30 @@
+# Python Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Diagnostic capture files & logs
+*.pcap
+*.cap
+*.log
+*.dump
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*~
