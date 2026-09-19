@@ -109,11 +109,46 @@ def get_interface_info() -> Dict[str, Any]:
 OUI_CACHE: Dict[str, str] = {}
 DEVICE_CACHE: Dict[str, Dict[str, Any]] = {}
 
+CUSTOM_OUI_MAP: Dict[str, str] = {
+    # Xiaomi (小米)
+    "90FB5D": "Xiaomi (小米)",
+    "A6FB5D": "Xiaomi (小米, MLO虛擬BSSID)",
+    "50D2F5": "Xiaomi (小米)",
+    "7C49EB": "Xiaomi (小米)",
+    "6490C1": "Xiaomi (小米)",
+    "D4970B": "Xiaomi (小米)",
+    "286C07": "Xiaomi (小米)",
+    "584120": "Xiaomi (小米)",
+    "34CE00": "Xiaomi (小米)",
+    "04CF8C": "Xiaomi (小米)",
+    # ASUS (華碩)
+    "B082E2": "ASUSTek (華碩)",
+    "B682E2": "ASUSTek (華碩, 虛擬BSSID)",
+    "BA82E2": "ASUSTek (華碩, 虛擬BSSID)",
+    "BE82E2": "ASUSTek (華碩, 虛擬BSSID)",
+    "04D4C4": "ASUSTek (華碩)",
+    "04421A": "ASUSTek (華碩)",
+    "1C872C": "ASUSTek (華碩)",
+    "2C4D54": "ASUSTek (華碩)",
+    "2CFDA1": "ASUSTek (華碩)",
+    "38D547": "ASUSTek (華碩)",
+    "40167E": "ASUSTek (華碩)",
+    "AC1F74": "ASUSTek (華碩)",
+    "F02F74": "ASUSTek (華碩)",
+    "D017C2": "ASUSTek (華碩)",
+    "704D7B": "ASUSTek (華碩)",
+    # TP-Link
+    "DA07B6": "TP-Link (虛擬BSSID)",
+    "DA07B4": "TP-Link (虛擬BSSID)",
+    "B2A7B9": "TP-Link (虛擬BSSID)",
+}
+
 
 def load_oui_database():
     global OUI_CACHE
     if OUI_CACHE:
         return
+    OUI_CACHE.update(CUSTOM_OUI_MAP)
     oui_paths = [
         "/usr/share/nmap/nmap-mac-prefixes",
         "/usr/share/ieee-data/oui.txt",
@@ -127,15 +162,43 @@ def load_oui_database():
                         if not line or line.startswith("#"):
                             continue
                         parts = line.split(maxsplit=1)
-                        if len(parts) == 2:
+                        if len(parts) == 2 and parts[0].upper() not in OUI_CACHE:
                             OUI_CACHE[parts[0].upper()] = parts[1]
-                if OUI_CACHE:
+                if len(OUI_CACHE) > len(CUSTOM_OUI_MAP):
                     break
             except Exception:
                 pass
 
 
 load_oui_database()
+
+
+def lookup_mac_vendor(mac: str) -> str:
+    clean = mac.replace(":", "").upper()
+    prefix = clean[:6]
+    if prefix in CUSTOM_OUI_MAP:
+        return CUSTOM_OUI_MAP[prefix]
+    if prefix in OUI_CACHE:
+        return OUI_CACHE[prefix]
+
+    try:
+        first_byte = int(mac.split(":")[0], 16)
+        if first_byte & 0x02 != 0:
+            cand1 = f"{(first_byte & ~0x02):02X}{clean[2:6]}"
+            if cand1 in CUSTOM_OUI_MAP:
+                return f"{CUSTOM_OUI_MAP[cand1]} (虛擬 BSSID)"
+            if cand1 in OUI_CACHE:
+                return f"{OUI_CACHE[cand1]} (虛擬 BSSID)"
+
+            cand2 = f"{(first_byte & 0xF0):02X}{clean[2:6]}"
+            if cand2 in CUSTOM_OUI_MAP:
+                return f"{CUSTOM_OUI_MAP[cand2]} (虛擬 BSSID)"
+            if cand2 in OUI_CACHE:
+                return f"{OUI_CACHE[cand2]} (虛擬 BSSID)"
+    except Exception:
+        pass
+
+    return "未知硬體廠商"
 
 
 def resolve_station_details(mac: str, ip: str) -> Dict[str, Any]:
@@ -156,8 +219,7 @@ def resolve_station_details(mac: str, ip: str) -> Dict[str, Any]:
     except Exception:
         is_random = False
 
-    clean_mac = mac.replace(":", "").upper()
-    oui_vendor = OUI_CACHE.get(clean_mac[:6], "未知硬體廠商")
+    oui_vendor = lookup_mac_vendor(mac)
 
     # 2. Hostname resolution
     hostname = ""
@@ -557,9 +619,8 @@ def scan_nearby_wifi_aps(rescan: bool = False) -> Dict[str, Any]:
             sig_pct = 0
             sig_dbm = -100
 
-        # Vendor lookup from OUI
-        clean_mac = bssid.replace(":", "").upper()
-        vendor = OUI_CACHE.get(clean_mac[:6], "未知硬體廠商")
+        # Vendor lookup from OUI / MBSSID resolver
+        vendor = lookup_mac_vendor(bssid)
 
         sec_upper = security.upper()
         if "WPA3" in sec_upper:
