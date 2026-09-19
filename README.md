@@ -12,14 +12,16 @@
 2. [無線法規區域 (US) 與解除 5G 發射限制](#2-無線法規區域-us-與解除-5g-發射限制)
 3. [Web 診斷操作台快速啟動 (run.sh)](#3-web-診斷操作台快速啟動-runsh)
 4. [連線裝置智慧辨識與射頻遙測 (Connected Stations)](#4-連線裝置智慧辨識與射頻遙測-connected-stations)
-5. [五大 Diagnostic 實戰診斷專題](#5-五大-diagnostic-實戰診斷專題)
+5. [六大 Diagnostic 實戰診斷專題](#5-六大-diagnostic-實戰診斷專題)
    - [診斷一：往返延遲與無線抖動測試 (Ping Latency & Jitter)](#診斷一往返延遲與無線抖動測試-ping-latency--jitter)
    - [診斷二：實機極限吞吐量測速 (Web Speedtest & iPerf3)](#診斷二實機極限吞吐量測速-web-speedtest--iperf3)
    - [診斷三：即時動態訊號衰減折線圖 (Live RSSI & Rate Adaptation)](#診斷三即時動態訊號衰減折線圖-live-rssi--rate-adaptation)
-   - [診斷四：空中通訊協定與封包側錄 (Packet Capture & Wireshark)](#診斷四空中通訊協定與封包側錄-packet-capture--wireshark)
-   - [診斷五：頻段與頻道抗干擾評估 (RF Band & Channel Comparison)](#診斷五頻段與頻道抗干擾評估-rf-band--channel-comparison)
+   - [診斷四：周遭熱點基地台掃描 (Wi-Fi Site Survey & AP Scanner)](#診斷四周遭熱點基地台掃描-wi-fi-site-survey--ap-scanner)
+   - [診斷五：空中通訊協定與封包側錄 (Packet Capture & Wireshark)](#診斷五空中通訊協定與封包側錄-packet-capture--wireshark)
+   - [診斷六：頻段與頻道抗干擾評估 (RF Band & Channel Comparison)](#診斷六頻段與頻道抗干擾評估-rf-band--channel-comparison)
 6. [無線網路學習手冊與射頻理論實戰指南](#6-無線網路學習手冊與射頻理論實戰指南)
 7. [CLI 命令列速查手冊 (alfa-mode & iw)](#7-cli-命令列速查手冊-alfa-mode--iw)
+8. [AI Coding Agent 規範與專案技能 (AGENTS.md)](#8-ai-coding-agent-規範與專案技能-agentsmd)
 
 ---
 
@@ -30,10 +32,12 @@
 ### ✨ 核心亮點
 * **多網路卡/雙網卡協同架構**：系統主力對外網卡（Primary Uplink）專職對外連網並提供 NAT 轉送；ALFA 網路卡可隨時切換為獨立診斷熱點基地台（Diagnostic AP）或 Client 備援上網，彼此路由度量（Metric）隔離互不干擾。
 * **連線裝置智慧識別（主機名稱與廠牌辨識）**：整合 **Apple mDNS (Bonjour / Avahi)** 與熱點本機 **DHCP Option 12** 記錄，即時自動反查用戶端裝置主機名稱（如 `Shen-iPhone-16e`、`Pixel-10-Pro`）；內建 42,000+ 筆 IEEE OUI 製造商快取，精準識別現代 iOS / Android 之「隨機私人 MAC (LAA)」防追蹤模式並智慧反推廠牌。
-* **一鍵 Web 儀表板 (`./run.sh`)**：支援響應式 Web 操作介面，手機連入熱點後，無需安裝任何 App，直接在手機瀏覽器開啟 `http://10.42.0.1:8080` 即可進行實機雙向測速、Ping 抖動與訊號分析。
+* **周遭熱點站點調查 (Wi-Fi Site Survey & AP 掃描)**：非破壞性背景即時探測空間中所有 2.4GHz / 5GHz / 6GHz 基地台，解析 SSID、頻道、訊號強度（RSSI dBm 與百分比）、WPA2/WPA3 安全防護與 IEEE OUI 製造商，並智慧評估頻譜頻道壅塞度與推薦乾淨頻道。
+* **一鍵 Web 儀表板 (`./run.sh`)**：支援響應式 Web 操作介面，手機連入熱點後，無需安裝任何 App，直接在手機瀏覽器開啟 `http://10.42.0.1:8080` 即可進行實機雙向測速、Ping 抖動、周遭熱點掃描與訊號分析。
 * **即時雙天線訊號監控**：即時擷取 2T2R 雙天線個別訊號（`Antenna 1 / Antenna 2 dBm`）、MCS 調變指數、即時傳輸速率（Tx/Rx Bitrate）與封包重傳（Retries）。
 * **WebSocket 即時推播架構**：採用非同步 WebSocket 長連線推播；徹底告別傳統 HTTP 輪詢造成的終端日誌洗版，介面反應更快更即時。
 * **法規全頻道解鎖**：提供開機與熱插拔自動固化為 `country US` 的解決方案，徹底消除 Linux 核心在 5GHz UNII-1 (Ch 36~48) 與 UNII-3 (Ch 149~165) 的 `NO-IR` 限制。
+* **Coding Agent 友善架構 (AGENTS.md & SKILLs)**：專案根目錄內建 `AGENTS.md`、`CLAUDE.md`、`GEMINI.md` 與 `.agents/skills/` 專家知識庫，支援 Gemini Agy CLI、Codex CLI、Claude CLI 快速接手開發與維運。
 
 ---
 
@@ -99,7 +103,7 @@ cd Diagnostic_Alfa
 
 ---
 
-## 5. 五大 Diagnostic 實戰診斷專題
+## 5. 六大 Diagnostic 實戰診斷專題
 
 ### 診斷一：往返延遲與無線抖動測試 (Ping Latency & Jitter)
 * **目的**：評估 Wi-Fi 空氣介質品質、抗干擾能力與即時往返時延。
@@ -132,7 +136,15 @@ cd Diagnostic_Alfa
   * 近距離：訊號為 `-40 ~ -50 dBm`，速率鎖定在最高 MCS 8 (173.3 Mbps)。
   * 隔牆或拉遠：訊號衰減至 `-70 ~ -80 dBm`，折線圖會即時記錄網路卡自動降為 MCS 4 或 MCS 2 以保證連線不中斷。
 
-### 診斷四：空中通訊協定與封包側錄 (Packet Capture & Wireshark)
+### 診斷四：周遭熱點基地台掃描 (Wi-Fi Site Survey & AP Scanner)
+* **目的**：全面探測空間周遭所有可見 Wi-Fi 基地台，評估各頻道電磁波環境壅塞度，為診斷熱點挑選最佳乾淨頻道，並審查周遭網路安全防護等級。
+* **Web 操作**：切換至【周遭熱點掃描】，點擊「快速讀取 (30ms 快取)」或「全頻主動探測 (Rescan)」。
+* **功能亮點**：
+  * **非破壞性背景掃描**：熱點正在發射時依然可獲取站點資訊，手機連網不中斷。
+  * **完整基地台欄位**：SSID、BSSID、頻道、頻段（2.4G/5G/6G）、最大速率、訊號強度（% 與估算 dBm）、安全協定（WPA3/WPA2/Open）與硬體製造商（IEEE OUI）。
+  * **頻譜頻道佔用圖 (Spectrum Congestion)**：即時統計 Ch 1, 6, 11 與 5G UNII-1 / UNII-3 佔用狀況，並自動提供推薦乾淨頻道。
+
+### 診斷五：空中通訊協定與封包側錄 (Packet Capture & Wireshark)
 * **目的**：檢視設備連入熱點後「從配發 IP 到正常上網」的完整通訊行為，排除「卡在取得 IP」、「DNS 解析卡頓」或「跳不出認證網頁」的真正根因。
 * **實戰指令庫 (Cheat Sheet)**（Web 頁面提供一鍵點擊複製）：
   ```bash
@@ -153,7 +165,7 @@ cd Diagnostic_Alfa
   ```
   *(註：`<interface>` 預設為 ALFA 網卡介面名稱，例如 `wlx00c0cabb0b45` 或 `wlan1`)*
 
-### 診斷五：頻段與頻道抗干擾評估 (RF Band & Channel Comparison)
+### 診斷六：頻段與頻道抗干擾評估 (RF Band & Channel Comparison)
 * **目的**：比較 5GHz UNII-1、UNII-3 與 2.4GHz 頻段的覆蓋與抗干擾表現。
 * **測試對比**：
   * **5GHz Channel 36**：低頻 UNII-1，室內干擾極少，適合近距離高速傳輸。
@@ -256,3 +268,18 @@ iw reg get
 # 檢視網路卡支援頻率與各頻道 NO-IR 狀態
 iw phy phy1 info
 ```
+
+---
+
+## 8. AI Coding Agent 規範與專案技能 (AGENTS.md)
+
+本專案深度整合 AI Pair Programming 工作流程，內建為 **Gemini Agy CLI**、**Codex CLI** 與 **Claude CLI** 定制之標準規範：
+
+* **核心規範文件**：
+  * [`AGENTS.md`](./AGENTS.md)：定義雙網卡安全隔離鐵律、100% 臺灣正體中文要求、去識別化政策與常用維運指令。
+  * [`CLAUDE.md`](./CLAUDE.md) 與 [`GEMINI.md`](./GEMINI.md)：各 CLI 工具入口導引。
+* **專屬專家技能庫 (`.agents/skills/`)**：
+  * `alfa-wireless-diagnosis`：ALFA AWUS036AXML (MT7921AU) 射頻遙測、模式切換與天線解析。
+  * `wifi-site-survey`：周遭熱點掃描、頻道干擾雷達、WPA2/WPA3 安全分析與 OUI 廠牌匹配。
+  * `taiwan-localization-guide`：通訊領域正體中文專有名詞審校對照表。
+

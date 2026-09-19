@@ -42,6 +42,8 @@ document.addEventListener("DOMContentLoaded", () => {
     switchTab('tab-ping');
   } else if (window.location.hash === '#chart') {
     switchTab('tab-chart');
+  } else if (window.location.hash === '#scanner' || window.location.hash === '#scan') {
+    switchTab('tab-scanner');
   } else if (window.location.hash === '#guide' || window.location.hash === '#manual') {
     switchTab('tab-guide');
   }
@@ -536,7 +538,7 @@ function copyTargetUrl() {
 // 8. Tabs & Chart Logic
 // ==========================================
 function switchTab(tabId) {
-  const tabs = ['tab-speedtest', 'tab-ping', 'tab-chart', 'tab-packets', 'tab-channels', 'tab-guide'];
+  const tabs = ['tab-speedtest', 'tab-ping', 'tab-chart', 'tab-scanner', 'tab-packets', 'tab-channels', 'tab-guide'];
   tabs.forEach(t => {
     const el = document.getElementById(t);
     const nav = document.getElementById('nav-' + t);
@@ -555,6 +557,10 @@ function switchTab(tabId) {
       }
     }
   });
+
+  if (tabId === 'tab-scanner' && !currentScanData && !isScanning) {
+    fetchWifiScan(false);
+  }
 
   if (window.lucide) lucide.createIcons();
 }
@@ -811,4 +817,226 @@ function copyText(btn, text) {
   } else {
     fallback();
   }
+}
+
+// ==========================================
+// 12. Wi-Fi Site Survey & AP Scanner Logic
+// ==========================================
+let currentScanData = null;
+let isScanning = false;
+let scanFilterBand = 'all';
+let scanSearchQuery = '';
+
+async function fetchWifiScan(rescan = false) {
+  if (isScanning) return;
+  isScanning = true;
+
+  const listEl = document.getElementById('scan-ap-list');
+  const btnFast = document.getElementById('btn-wifi-scan-fast');
+  const btnForce = document.getElementById('btn-wifi-scan-force');
+
+  if (rescan) {
+    if (btnForce) btnForce.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>全頻探測中 (約3秒)...</span>`;
+  } else {
+    if (btnFast) btnFast.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>讀取快取中...</span>`;
+  }
+  if (window.lucide) lucide.createIcons();
+
+  if (!currentScanData && listEl) {
+    listEl.innerHTML = `
+      <div class="text-center py-10 ui-sec text-xs">
+        <i data-lucide="loader-2" class="w-7 h-7 mx-auto text-cyan-400 mb-2 animate-spin"></i>
+        <span>正在探測周遭無線基地台與射頻環境，請稍候...</span>
+      </div>
+    `;
+    if (window.lucide) lucide.createIcons();
+  }
+
+  try {
+    const res = await fetch(`/api/wifi/scan?rescan=${rescan}`);
+    const data = await res.json();
+    if (data && data.success) {
+      currentScanData = data;
+      renderWifiScan();
+    } else {
+      if (listEl) listEl.innerHTML = `<div class="text-center py-8 text-rose-400 text-xs">❌ 掃描失敗：${data.error || '無法取得掃描結果'}</div>`;
+    }
+  } catch (err) {
+    if (listEl) listEl.innerHTML = `<div class="text-center py-8 text-rose-400 text-xs">❌ 連線異常：${err.message}</div>`;
+  } finally {
+    isScanning = false;
+    if (btnFast) btnFast.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i><span>快速讀取 (30ms 快取)</span>`;
+    if (btnForce) btnForce.innerHTML = `<i data-lucide="zap" class="w-3.5 h-3.5"></i><span>全頻主動探測 (Rescan)</span>`;
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+function setScanFilterBand(band) {
+  scanFilterBand = band;
+  const bands = ['all', '2.4GHz', '5GHz', '6GHz'];
+  bands.forEach(b => {
+    const el = document.getElementById(b === 'all' ? 'btn-scan-filter-all' : b === '2.4GHz' ? 'btn-scan-filter-2g' : b === '5GHz' ? 'btn-scan-filter-5g' : 'btn-scan-filter-6g');
+    if (!el) return;
+    if (b === band) {
+      el.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 text-white transition';
+    } else {
+      el.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold ui-pill border hover:opacity-80 transition';
+    }
+  });
+  renderWifiScan();
+}
+
+function onScanSearch(val) {
+  scanSearchQuery = (val || '').trim().toLowerCase();
+  renderWifiScan();
+}
+
+function renderWifiScan() {
+  if (!currentScanData) return;
+  const stats = currentScanData.stats || {};
+  const aps = currentScanData.aps || [];
+
+  // Update Summary Metrics
+  const totalEl = document.getElementById('scan-stat-total');
+  const g2El = document.getElementById('scan-stat-2g');
+  const g5El = document.getElementById('scan-stat-5g');
+  const g2RecEl = document.getElementById('scan-stat-2g-rec');
+  const g5RecEl = document.getElementById('scan-stat-5g-rec');
+  const strongEl = document.getElementById('scan-stat-strongest');
+  const strongRssiEl = document.getElementById('scan-stat-strongest-rssi');
+  const lastTimeEl = document.getElementById('scan-last-time');
+
+  if (totalEl) totalEl.innerText = stats.total_aps || aps.length;
+  if (g2El) g2El.innerText = (stats.band_counts && stats.band_counts['2.4GHz']) || 0;
+  if (g5El) g5El.innerText = (stats.band_counts && stats.band_counts['5GHz']) || 0;
+  if (g2RecEl) g2RecEl.innerText = `推薦 Ch ${stats.recommendation ? stats.recommendation.best_2g_channel : '--'}`;
+  if (g5RecEl) g5RecEl.innerText = `推薦 Ch ${stats.recommendation ? stats.recommendation.best_5g_channel : '--'}`;
+
+  if (aps.length > 0) {
+    const strongest = aps[0];
+    if (strongEl) strongEl.innerText = strongest.ssid;
+    if (strongRssiEl) strongRssiEl.innerText = `${strongest.signal_pct}% (${strongest.signal_dbm} dBm)`;
+  }
+  if (lastTimeEl) {
+    const d = new Date(currentScanData.timestamp * 1000);
+    lastTimeEl.innerText = `更新於 ${d.toLocaleTimeString()}`;
+  }
+
+  // Render Channel Congestion Bars
+  const channelBarsEl = document.getElementById('scan-channel-bars');
+  if (channelBarsEl) {
+    const dist = stats.channel_distribution || {};
+    const keyChannels = [
+      { ch: '1', band: '2.4G' }, { ch: '6', band: '2.4G' }, { ch: '11', band: '2.4G' },
+      { ch: '36', band: '5G' }, { ch: '40', band: '5G' }, { ch: '44', band: '5G' }, { ch: '48', band: '5G' },
+      { ch: '100', band: '5G' }, { ch: '149', band: '5G' }, { ch: '153', band: '5G' }, { ch: '157', band: '5G' }
+    ];
+    channelBarsEl.innerHTML = keyChannels.map(item => {
+      const count = dist[item.ch] || 0;
+      const isHigh = count >= 4;
+      const isMed = count >= 2 && count < 4;
+      const badgeBg = isHigh ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : isMed ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+      return `
+        <div class="ui-tertiary p-2 rounded-lg border flex flex-col items-center">
+          <span class="text-[10px] ui-sec font-mono">Ch ${item.ch}</span>
+          <span class="text-[9px] ui-muted font-mono">${item.band}</span>
+          <span class="px-1.5 py-0.5 rounded text-[10px] font-bold font-mono border mt-1 ${badgeBg}">${count} 台</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Filter APs
+  let filtered = aps.filter(ap => {
+    if (scanFilterBand !== 'all' && ap.band !== scanFilterBand) return false;
+    if (scanSearchQuery) {
+      const q = scanSearchQuery;
+      const matchSsid = (ap.ssid || '').toLowerCase().includes(q);
+      const matchBssid = (ap.bssid || '').toLowerCase().includes(q);
+      const matchVendor = (ap.vendor || '').toLowerCase().includes(q);
+      const matchChan = (ap.channel || '').toString().includes(q);
+      if (!matchSsid && !matchBssid && !matchVendor && !matchChan) return false;
+    }
+    return true;
+  });
+
+  const listCountEl = document.getElementById('scan-list-count');
+  if (listCountEl) listCountEl.innerText = filtered.length;
+
+  const listEl = document.getElementById('scan-ap-list');
+  if (!listEl) return;
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = `
+      <div class="text-center py-8 ui-sec text-xs">
+        <i data-lucide="search-x" class="w-6 h-6 mx-auto text-slate-400 mb-1.5"></i>
+        未找到符合條件之 Wi-Fi 基地台
+      </div>
+    `;
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(ap => {
+    const isCurrent = ap.in_use || (ap.ssid === 'DiagnosticAP');
+    const isWpa3 = ap.security_type === 'wpa3';
+    const isOpen = ap.security_type === 'open';
+
+    const secBadge = isWpa3
+      ? `<span class="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center space-x-1" title="WPA3-SAE 最高防護">
+           <i data-lucide="shield-check" class="w-3 h-3 text-emerald-400"></i><span>${ap.security}</span>
+         </span>`
+      : isOpen
+      ? `<span class="px-2 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/30 text-xs font-semibold flex items-center space-x-1" title="開放網路無加密">
+           <i data-lucide="shield-alert" class="w-3 h-3 text-rose-400"></i><span>開放無密碼</span>
+         </span>`
+      : `<span class="px-2 py-0.5 rounded bg-blue-500/15 text-blue-400 border border-blue-500/30 text-xs font-semibold flex items-center space-x-1">
+           <i data-lucide="shield" class="w-3 h-3 text-blue-400"></i><span>${ap.security}</span>
+         </span>`;
+
+    const sigColor = ap.signal_pct >= 70 ? 'text-emerald-400' : ap.signal_pct >= 40 ? 'text-amber-400' : 'text-slate-400';
+    const barBg = ap.signal_pct >= 70 ? 'bg-emerald-500' : ap.signal_pct >= 40 ? 'bg-amber-500' : 'bg-slate-500';
+
+    const bandBadgeColor = ap.band === '5GHz' ? 'text-cyan-400 border-cyan-500/30 bg-cyan-500/10' : ap.band === '6GHz' ? 'text-purple-400 border-purple-500/30 bg-purple-500/10' : 'text-amber-400 border-amber-500/30 bg-amber-500/10';
+
+    return `
+      <div class="ui-subcard border rounded-lg p-3.5 sm:p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 shadow-sm hover:border-cyan-500/40 transition-colors ${isCurrent ? 'border-cyan-500/60 bg-cyan-500/5' : ''}">
+        <div class="space-y-1.5 flex-1 min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="font-bold ui-title text-sm sm:text-base flex items-center space-x-1.5 truncate">
+              <i data-lucide="${isOpen ? 'wifi-off' : 'wifi'}" class="w-4 h-4 ${isCurrent ? 'text-cyan-400' : 'text-slate-400'} shrink-0"></i>
+              <span class="truncate">${ap.ssid}</span>
+            </span>
+            ${isCurrent ? '<span class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 text-xs font-bold font-mono">當前使用中</span>' : ''}
+            <span class="px-2 py-0.5 rounded text-xs font-mono font-semibold border ${bandBadgeColor}">
+              ${ap.band} · Ch ${ap.channel} (${ap.freq_mhz} MHz)
+            </span>
+            ${secBadge}
+          </div>
+          
+          <div class="text-xs ui-sec flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span class="font-mono text-slate-400">BSSID: <strong class="ui-title">${ap.bssid}</strong></span>
+            <span class="flex items-center space-x-1">
+              <i data-lucide="cpu" class="w-3 h-3 text-slate-400"></i>
+              <span class="ui-title font-medium">${ap.vendor}</span>
+            </span>
+            <span>最高速率: <strong class="ui-title font-mono">${ap.rate || '-'}</strong></span>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-3 shrink-0">
+          <div class="text-right">
+            <div class="font-bold font-mono text-sm ${sigColor}">${ap.signal_pct}%</div>
+            <div class="text-[10px] ui-muted font-mono">${ap.signal_dbm} dBm</div>
+          </div>
+          <div class="w-16 sm:w-20 bg-slate-700/40 h-2 rounded-full overflow-hidden border border-slate-700/50">
+            <div class="${barBg} h-full transition-all duration-300" style="width: ${ap.signal_pct}%"></div>
+          </div>
+          <div class="font-mono text-xs ${sigColor} w-6 text-center select-none">${ap.bars || '____'}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (window.lucide) lucide.createIcons();
 }

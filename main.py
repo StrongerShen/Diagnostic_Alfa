@@ -458,6 +458,11 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Immediately push updated status
                 await manager.broadcast({"type": "status", "data": get_full_status()})
 
+            elif msg_type == "wifi_scan":
+                rescan = bool(data.get("rescan", False))
+                scan_res = scan_nearby_wifi_aps(rescan=rescan)
+                await websocket.send_json({"type": "wifi_scan_result", "data": scan_res})
+
             elif msg_type == "iperf3_toggle":
                 api_iperf3_toggle()
                 status = api_iperf3_status()
@@ -476,9 +481,151 @@ async def websocket_endpoint(websocket: WebSocket):
 # REST API Endpoints (Fallback & Scripts)
 # ==========================================
 
+def scan_nearby_wifi_aps(rescan: bool = False) -> Dict[str, Any]:
+    rescan_flag = "--rescan yes" if rescan else "--rescan no"
+    cmd = f"nmcli -t -f IN-USE,BSSID,SSID,MODE,CHAN,FREQ,RATE,SIGNAL,BARS,SECURITY dev wifi list {rescan_flag}"
+    try:
+        proc = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=15)
+        lines = proc.stdout.strip().splitlines()
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "total": 0,
+            "aps": [],
+            "stats": {}
+        }
+
+    aps = []
+    seen = set()
+    chan_dist: Dict[str, int] = {}
+    band_counts = {"2.4GHz": 0, "5GHz": 0, "6GHz": 0, "other": 0}
+
+    for line in lines:
+        if not line.strip():
+            continue
+        unescaped = line.replace(r"\:", "__COLON__")
+        parts = unescaped.split(":")
+        if len(parts) < 9:
+            continue
+        parts = [p.replace("__COLON__", ":") for p in parts]
+
+        in_use = parts[0].strip() == "*"
+        bssid = parts[1].strip()
+        raw_ssid = parts[2].strip()
+        ssid = raw_ssid if raw_ssid else "[隱藏 SSID / Hidden]"
+        mode = parts[3].strip()
+        chan = parts[4].strip()
+        freq_str = parts[5].strip()
+        rate = parts[6].strip()
+        sig_str = parts[7].strip()
+        bars = parts[8].strip()
+        security = parts[9].strip() if len(parts) > 9 else "--"
+        if not security:
+            security = "開放無密碼 (Open)"
+
+        # Deduplicate same BSSID + SSID + Channel
+        key = (bssid.lower(), ssid, chan)
+        if key in seen:
+            continue
+        seen.add(key)
+
+        # Freq & Band
+        freq_m = re.search(r"(\d+)", freq_str)
+        freq_val = int(freq_m.group(1)) if freq_m else 0
+        if freq_val >= 5925:
+            band = "6GHz"
+            band_counts["6GHz"] += 1
+        elif freq_val >= 5000:
+            band = "5GHz"
+            band_counts["5GHz"] += 1
+        elif freq_val >= 2400:
+            band = "2.4GHz"
+            band_counts["2.4GHz"] += 1
+        else:
+            band = "其他"
+            band_counts["other"] += 1
+
+        if chan and chan != "--":
+            chan_dist[chan] = chan_dist.get(chan, 0) + 1
+
+        # Signal dBm estimate
+        try:
+            sig_pct = int(sig_str)
+            sig_dbm = int((sig_pct / 2) - 100)
+        except Exception:
+            sig_pct = 0
+            sig_dbm = -100
+
+        # Vendor lookup from OUI
+        clean_mac = bssid.replace(":", "").upper()
+        vendor = OUI_CACHE.get(clean_mac[:6], "未知硬體廠商")
+
+        sec_upper = security.upper()
+        if "WPA3" in sec_upper:
+            sec_type = "wpa3"
+        elif "WPA2" in sec_upper:
+            sec_type = "wpa2"
+        elif "WPA" in sec_upper:
+            sec_type = "wpa1"
+        elif "OPEN" in sec_upper or "--" in sec_upper or "開放" in security:
+            sec_type = "open"
+        else:
+            sec_type = "other"
+
+        aps.append({
+            "in_use": in_use,
+            "bssid": bssid,
+            "ssid": ssid,
+            "channel": chan,
+            "freq_mhz": freq_val,
+            "band": band,
+            "rate": rate,
+            "signal_pct": sig_pct,
+            "signal_dbm": sig_dbm,
+            "bars": bars,
+            "security": security,
+            "security_type": sec_type,
+            "vendor": vendor
+        })
+
+    # Sort: in-use first, then signal descending
+    aps.sort(key=lambda x: (not x["in_use"], -x["signal_pct"]))
+
+    # Recommendations for least congested channels
+    ch2g_counts = {ch: chan_dist.get(str(ch), 0) for ch in [1, 6, 11]}
+    best_2g = min(ch2g_counts, key=ch2g_counts.get) if ch2g_counts else 6
+
+    ch5g_candidates = [36, 40, 44, 48, 149, 153, 157, 161]
+    ch5g_counts = {ch: chan_dist.get(str(ch), 0) for ch in ch5g_candidates}
+    best_5g = min(ch5g_counts, key=ch5g_counts.get) if ch5g_counts else 36
+
+    stats = {
+        "total_aps": len(aps),
+        "band_counts": band_counts,
+        "channel_distribution": chan_dist,
+        "recommendation": {
+            "best_2g_channel": best_2g,
+            "best_5g_channel": best_5g
+        }
+    }
+
+    return {
+        "success": True,
+        "timestamp": time.time(),
+        "stats": stats,
+        "aps": aps
+    }
+
+
 @app.get("/api/status")
 def api_status():
     return get_full_status()
+
+
+@app.get("/api/wifi/scan")
+def api_wifi_scan(rescan: bool = False):
+    return scan_nearby_wifi_aps(rescan=rescan)
 
 
 @app.post("/api/mode/switch")

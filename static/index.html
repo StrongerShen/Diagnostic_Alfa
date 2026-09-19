@@ -353,6 +353,10 @@
           <i data-lucide="trending-up" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
           <span>即時訊號折線圖</span>
         </button>
+        <button onclick="switchTab('tab-scanner')" id="nav-tab-scanner" class="tab-btn px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-semibold ui-sec hover:ui-title flex items-center space-x-1.5 whitespace-nowrap shrink-0">
+          <i data-lucide="radar" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400"></i>
+          <span>周遭熱點掃描</span>
+        </button>
         <button onclick="switchTab('tab-packets')" id="nav-tab-packets" class="tab-btn px-3.5 sm:px-4 py-3 text-xs sm:text-sm font-semibold ui-sec hover:ui-title flex items-center space-x-1.5 whitespace-nowrap shrink-0">
           <i data-lucide="file-search" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
           <span>通訊協定與封包</span>
@@ -959,7 +963,134 @@
         </div>
       </div>
 
-      <!-- Tab 6: Wireless Networking Educational Guide (無線網路學習手冊) -->
+      <!-- Tab: Wi-Fi Site Survey & AP Scanner (周遭熱點基地台掃描) -->
+      <div id="tab-scanner" class="hidden p-3.5 sm:p-6 space-y-5">
+        
+        <!-- Header & Action Control Bar -->
+        <div class="ui-subcard p-4 sm:p-5 rounded-xl border shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center space-x-2 text-cyan-400 mb-1">
+              <i data-lucide="radar" class="w-4 h-4"></i>
+              <span class="text-xs font-bold uppercase tracking-wider">Wi-Fi 站點調查與周遭基地台偵測 (Site Survey)</span>
+            </div>
+            <h3 class="ui-title text-base sm:text-lg font-extrabold">周遭熱點基地台掃描 (AP Scanner)</h3>
+            <p class="ui-sec text-xs sm:text-sm mt-1">
+              由 ALFA 網路卡與系統環境即時探測空間中可被偵測到的 Wi-Fi 基地台 SSID、頻道、訊號強度 (RSSI dBm)、安全協定 (WPA2/WPA3) 與製造商 OUI。
+            </p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <button onclick="fetchWifiScan(false)" id="btn-wifi-scan-fast" class="px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-bold shadow transition flex items-center space-x-1.5">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+              <span>快速讀取 (30ms 快取)</span>
+            </button>
+            <button onclick="fetchWifiScan(true)" id="btn-wifi-scan-force" class="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold shadow transition flex items-center space-x-1.5">
+              <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+              <span>全頻主動探測 (Rescan)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Summary Metric Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div class="ui-subcard p-3.5 rounded-xl border shadow-sm">
+            <div class="ui-sec text-[11px] font-semibold flex items-center justify-between">
+              <span>偵測熱點總數</span>
+              <i data-lucide="router" class="w-3.5 h-3.5 text-cyan-400"></i>
+            </div>
+            <div id="scan-stat-total" class="ui-title text-2xl font-bold font-mono mt-1">--</div>
+            <div class="text-[10px] ui-sec mt-0.5">空間可見基地台</div>
+          </div>
+          <div class="ui-subcard p-3.5 rounded-xl border shadow-sm">
+            <div class="ui-sec text-[11px] font-semibold flex items-center justify-between">
+              <span>2.4GHz 頻段熱點</span>
+              <span id="scan-stat-2g-rec" class="text-[10px] text-emerald-400 font-mono">推薦 Ch --</span>
+            </div>
+            <div id="scan-stat-2g" class="text-amber-400 text-2xl font-bold font-mono mt-1">--</div>
+            <div class="text-[10px] ui-sec mt-0.5">多數佔用 Ch 1/6/11</div>
+          </div>
+          <div class="ui-subcard p-3.5 rounded-xl border shadow-sm">
+            <div class="ui-sec text-[11px] font-semibold flex items-center justify-between">
+              <span>5GHz 頻段熱點</span>
+              <span id="scan-stat-5g-rec" class="text-[10px] text-emerald-400 font-mono">推薦 Ch --</span>
+            </div>
+            <div id="scan-stat-5g" class="text-cyan-400 text-2xl font-bold font-mono mt-1">--</div>
+            <div class="text-[10px] ui-sec mt-0.5">高速乾淨頻段</div>
+          </div>
+          <div class="ui-subcard p-3.5 rounded-xl border shadow-sm">
+            <div class="ui-sec text-[11px] font-semibold flex items-center justify-between">
+              <span>最強訊號熱點</span>
+              <i data-lucide="signal-high" class="w-3.5 h-3.5 text-emerald-400"></i>
+            </div>
+            <div id="scan-stat-strongest" class="text-emerald-400 text-sm font-bold font-mono truncate mt-1">--</div>
+            <div id="scan-stat-strongest-rssi" class="text-[10px] ui-sec mt-0.5 font-mono">-- dBm</div>
+          </div>
+        </div>
+
+        <!-- Filter & Search Bar -->
+        <div class="ui-card p-3.5 rounded-xl border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <!-- Band Filter Buttons -->
+          <div class="flex items-center space-x-1.5 overflow-x-auto no-scrollbar">
+            <button onclick="setScanFilterBand('all')" id="btn-scan-filter-all" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-cyan-600 text-white transition">全部頻段</button>
+            <button onclick="setScanFilterBand('2.4GHz')" id="btn-scan-filter-2g" class="px-3 py-1.5 rounded-lg text-xs font-semibold ui-pill border hover:opacity-80 transition">2.4GHz</button>
+            <button onclick="setScanFilterBand('5GHz')" id="btn-scan-filter-5g" class="px-3 py-1.5 rounded-lg text-xs font-semibold ui-pill border hover:opacity-80 transition">5GHz</button>
+            <button onclick="setScanFilterBand('6GHz')" id="btn-scan-filter-6g" class="px-3 py-1.5 rounded-lg text-xs font-semibold ui-pill border hover:opacity-80 transition">6GHz</button>
+          </div>
+          <!-- Search Input -->
+          <div class="relative w-full sm:w-64">
+            <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400"></i>
+            <input type="text" id="scan-search-input" oninput="onScanSearch(this.value)" placeholder="搜尋 SSID、BSSID、廠牌..." class="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg ui-code border ui-border focus:outline-none focus:border-cyan-500 text-slate-200">
+          </div>
+        </div>
+
+        <!-- Channel Congestion Visualizer -->
+        <div class="ui-subcard p-4 rounded-xl border shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="ui-title text-xs sm:text-sm font-bold flex items-center space-x-1.5">
+              <i data-lucide="bar-chart-2" class="w-4 h-4 text-purple-400"></i>
+              <span>周遭頻譜頻道佔用圖 (Channel Spectrum Congestion)</span>
+            </h4>
+            <span class="text-[10px] ui-sec">頻道被越少熱點佔用越乾淨</span>
+          </div>
+          <div id="scan-channel-bars" class="grid grid-cols-4 sm:grid-cols-7 md:grid-cols-11 gap-2 text-center text-xs">
+            <!-- Dynamically populated channel load bars -->
+          </div>
+        </div>
+
+        <!-- AP List Container -->
+        <div class="space-y-2.5">
+          <div class="flex items-center justify-between text-xs ui-sec px-1">
+            <span>基地台明細清單 (<span id="scan-list-count" class="font-bold ui-title font-mono">0</span> 台)</span>
+            <span id="scan-last-time" class="text-[10px] font-mono">尚未掃描</span>
+          </div>
+          <div id="scan-ap-list" class="space-y-2.5">
+            <div class="text-center py-12 ui-sec text-xs">
+              <i data-lucide="radar" class="w-8 h-8 mx-auto text-slate-400 mb-2 animate-pulse"></i>
+              點選「快速讀取」或「全頻主動探測」開始掃描周遭熱點
+            </div>
+          </div>
+        </div>
+
+        <!-- Technical Tip Notice -->
+        <div class="p-3.5 rounded-lg border ui-border-sub bg-cyan-500/5 text-xs text-slate-400 space-y-1.5">
+          <div class="font-bold text-cyan-400 flex items-center space-x-1.5">
+            <i data-lucide="info" class="w-4 h-4"></i>
+            <span>周遭熱點掃描 (Site Survey) 技術說明</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-[11px] leading-relaxed">
+            <div>
+              <span class="text-cyan-300 font-semibold">⚡ 非破壞性背景掃描：</span>
+              本系統採用 NetworkManager 快取與多網卡聚合架構，當 ALFA 網路卡正在擔任熱點發射時，依然可取得完整空口站點資訊，絕不中斷已連線手機之連網。
+            </div>
+            <div>
+              <span class="text-cyan-300 font-semibold">🔍 頻道抗干擾選網指南：</span>
+              2.4GHz 頻段波長長但同頻競爭劇烈，若 Ch 6 已有多台基地台，建議將 DiagnosticAP 切換至 Ch 1 或 Ch 11；5GHz 建議優先挑選 UNII-1 (Ch 36~48) 以享有零雷達干擾之極限頻寬。
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tab: Wireless Networking Educational Guide (無線網路學習手冊) -->
       <div id="tab-guide" class="hidden p-3.5 sm:p-6 space-y-5 sm:space-y-6">
         
         <!-- Header Banner -->
